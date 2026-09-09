@@ -1,10 +1,17 @@
 using RathodWebScraping.Components;
+using Microsoft.Extensions.AI;
+using OpenAI;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+string? openAIKey = builder.Configuration["OpenAI:ApiKey"];
+string? openAIModel = builder.Configuration["OpenAI:GptModel"];
+OpenAIClient openAIClient = new OpenAIClient(openAIKey);
+builder.Services.AddChatClient(new OpenAIChatClient(openAIClient,openAIModel));
 
 var app = builder.Build();
 
