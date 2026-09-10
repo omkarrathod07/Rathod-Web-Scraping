@@ -4,7 +4,7 @@ using OpenAI;
 using RathodWebScraping.Services;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Configuration.AddJsonFile("apisetting", optional: false, reloadOnChange: true);
+//builder.Configuration.AddJsonFile("apisetting", optional: false, reloadOnChange: true);
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
