@@ -1,7 +1,57 @@
 ﻿@page "/"
+@using RathodWebScraping.Services;
+@using HtmlAgilityPack
+@using System.Net.Http
+@using System.Text
+@using System.Text.Json
+@using System.Text.RegularExpressions
+@using System.Threading.Tasks
+@using Microsoft.Extensions.AI;
+@inject IChatClient ChatClient
+@inject HtmlScraperService htmlScraperService
 
-<PageTitle>Home</PageTitle>
+<PageTitle>Rathod Web Scraping</PageTitle>
 
-<h1>Hello, world!</h1>
+<h1>Rathod Web Scraping</h1>
+<br />
+<h4 style="text-align:center">
+    <b>Generate Responses using AI</b>
+</h4>
+<div class="row">
+    <textarea @bind="targetUrl" rows="2" placeholder="Enter or Paste Web Url"></textarea>
+</div>
 
-Welcome to your new app.
+<div style="text-align:center">
+    <button @onclick="ServiceScrapeAndProcessing" class="btn btn-primary mt-3" disabled="@isLoading">Scrape URL</button>
+    @*<button @onclick="@( () => ProcessUrLImage(imageUrl))" class="btn btn-primary mt-3" disabled="@isLoading">First Image AI Analysis</button>
+    <button @onclick="ScrapeAndProcessMSextensions" class="btn btn-primary mt-3" disabled="@isLoading">Generate Webpage AI Analysis</button>*@
+    @if(statusAI == "Processing . . .")
+    {
+        <img src="images/loading.gif" width="40" height="40" style="margin-left: 10px;" />
+        <em>@statusAI</em>
+    }
+    @if (isImageUrl)
+    {
+        <br />
+        <img src="@imageUrl" alt="Selected Image" style="max-width:300px; max-height:300px;" />
+        <strong>
+            Selected Image Original Size:@imageFileSize
+        </strong>
+        <i>bytes</i>
+    }
+</div>
+<div class="alert alert-info mt-3">
+    <p>
+        AI Analysis of Scraped Data using MS Extensions:@statusAI
+        <br />
+        @((MarkupString)responseMessage)
+    </p>
+</div>
+
+<div class="alert alert-light mt-3" style="width: 800px;">
+    <p>
+        Scraped Data:@statusScrape
+        <br />
+        @extractedDataMarkupString
+    </p>
+</div>
