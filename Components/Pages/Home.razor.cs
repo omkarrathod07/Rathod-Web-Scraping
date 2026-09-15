@@ -1,11 +1,12 @@
 ﻿using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.AI;
 using System.Text.RegularExpressions;
 
 namespace RathodWebScraping.Components.Pages
 {
     public partial class Home
     {
-        private string targetUrl = "https://ygminds.com/";
+        private string targetUrl = "https://breadtopia.com/";
         private string extractedData = "";
         private MarkupString extractedDataMarkupString => new MarkupString(extractedData);
         private bool isLoading = false;
@@ -55,7 +56,7 @@ namespace RathodWebScraping.Components.Pages
         private List<string> ExtractImageUrls(string htmlContent)
         {
             var urls = new List<string>();
-            var regex = new Regex("<img[^>]+?src=[\"'](?<url>.*?)[\"'][^>]*>", RegexOptions.IgnoreCase);
+            var regex = new Regex("<img[^>]+?src=[\"'](?<url>.*?)[\"']", RegexOptions.IgnoreCase);
             var matches = regex.Matches(htmlContent);
             foreach (Match match in matches)
             {
@@ -71,6 +72,27 @@ namespace RathodWebScraping.Components.Pages
         {
             statusScrape = "Please enter a URL.";
             return;
+        }
+        private async Task ScrapeAndProcessAI()
+        {
+            if (!string.IsNullOrEmpty(extractedData))
+            {
+                isLoading = true;
+                isImageUrl = false;
+                responseMessage = string.Empty;
+                statusAI = "Processing . . .";
+
+                var message = new ChatMessage(ChatRole.User, "Give me an overall idea what this site is about in nicely formated in HTML " + extractedData);
+                //message.Contents.Add(new DataContent(imageBase64, "image/jpg"));
+                var response = await ChatClient.GetResponseAsync(message);
+                responseMessage = response.Text;
+                isLoading = false;
+                statusAI = "Done";
+            }
+            else
+            {
+                responseMessage = "Please screpe the website first";
+            }
         }
     }
 }
