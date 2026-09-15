@@ -24,8 +24,8 @@
 
 <div style="text-align:center">
     <button @onclick="ServiceScrapeAndProcessing" class="btn btn-primary mt-3" disabled="@isLoading">Scrape URL</button>
-    @*<button @onclick="@( () => ProcessUrLImage(imageUrl))" class="btn btn-primary mt-3" disabled="@isLoading">First Image AI Analysis</button>
-    <button @onclick="ScrapeAndProcessMSextensions" class="btn btn-primary mt-3" disabled="@isLoading">Generate Webpage AI Analysis</button>*@
+    @*<button @onclick="@( () => ProcessUrLImage(imageUrl))" class="btn btn-primary mt-3" disabled="@isLoading">First Image AI Analysis</button>*@
+    <button @onclick="ScrapeAndProcessAI" class="btn btn-primary mt-3" disabled="@isLoading">Generate Webpage AI Analysis</button>
     @if(statusAI == "Processing . . .")
     {
         <img src="images/loading.gif" width="40" height="40" style="margin-left: 10px;" />
