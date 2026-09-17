@@ -1,46 +1,98 @@
 ﻿@page "/"
-@using RathodWebScraping.Services;
+
 @using HtmlAgilityPack
 @using System.Net.Http
-@using System.Text
 @using System.Text.Json
-@using System.Text.RegularExpressions
 @using System.Threading.Tasks
-@using Microsoft.Extensions.AI;
-@inject IChatClient ChatClient
-@inject HtmlScraperService htmlScraperService
+@using System.Text
+
+@using RathodWebScraping.Services
+
 @rendermode InteractiveServer
 
-<PageTitle>Rathod Web Scraping</PageTitle>
+@*Implements HTML Agility Pack*@
+@inject HtmlScraperService HtmlScraperService
 
-<h1>Rathod Web Scraping</h1>
+@using Microsoft.Extensions.AI;
+@inject IChatClient ChatClient
+
+@*Required for Regex commands in ExtractImageUrls method below*@
+@using System.Text.RegularExpressions
+
+<PageTitle>Home</PageTitle>
+
+<h5>Web Scraping AI ... Implementing HTML Agility Pack and Microsoft.Extensions.AI</h5>
+<h6>... Updated with Complete Site Image Analysis</h6>
+
+
 <br />
-<h4 style="text-align:center">
-    <b>Generate Responses using AI</b>
-</h4>
+
+<h5 style="text-align:center">
+    <b>Generate Responses using the OpenAI API</b>
+</h5>
+
 <div class="row">
-    <textarea @bind="targetUrl" rows="2" placeholder="Enter or Paste Web Url"></textarea>
+    <textarea @bind="targetUrl" rows="2" placeholder="Enter Website Address Here"></textarea>
 </div>
 
 <div style="text-align:center">
-    <button @onclick="ServiceScrapeAndProcessing" class="btn btn-primary mt-3" disabled="@isLoading">Scrape URL</button>
-    @*<button @onclick="@( () => ProcessUrLImage(imageUrl))" class="btn btn-primary mt-3" disabled="@isLoading">First Image AI Analysis</button>*@
-    <button @onclick="ScrapeAndProcessAI" class="btn btn-primary mt-3" disabled="@isLoading">Generate Webpage AI Analysis</button>
-    @if(statusAI == "Processing . . .")
+    <button @onclick="ServiceScrapeAndProcess" class="btn btn-primary mt-3" disabled="@isLoading">Web Scrape URL</button>
+    <button @onclick="@( () => ProcessUrLImage(imageUrl, 1))" class="btn btn-primary mt-3" disabled="@isLoading">First Image AI Analysis</button>
+    <button @onclick="ScrapeAndProcessMSextensions" class="btn btn-primary mt-3" disabled="@isLoading">Generate Webpage AI Analysis</button>
+
+    <br />
+
+    @if (statusAI == "Processing...")
     {
         <img src="images/loading.gif" width="40" height="40" style="margin-left: 10px;" />
         <em>@statusAI</em>
     }
-    @if (isImageUrl)
+
+    @*This handles the hard coded capture of the first image on the site*@
+    @if (isImageURL1)
     {
         <br />
-        <img src="@imageUrl" alt="Selected Image" style="max-width:300px; max-height:300px;" />
-        <strong>
-            Selected Image Original Size:@imageFileSize
-        </strong>
+        <img src="@imageUrl" alt="Selected Image" style="max-width: 300px; max-height: 300px;" />
+        <br />
+        <strong>Selected Image Original Size:@imageFileSize</strong>
         <i>bytes</i>
     }
+    @*This handles any image clicked on from the entire list displayed in the div section below*@
+    else if (isImageURL2)
+    {
+        <br />
+        <img src="@newImageURL" alt="Selected Image" style="max-width: 300px; max-height: 300px;" />
+        <br />
+        <strong>Selected Image Original Size:@imageFileSize</strong>
+        <i>bytes</i>
+    }
+
+    <br />
+
+    @*This displays all the images on the site that was scraped ...
+        Some may be placeholder images or not relevant to the site ... but they are all displayed
+        Theu are all clickable and will call the ProcessUrLImage method to analyze the image
+    *@
+    <div class="alert alert-light">
+        @if (imageUrls.Count > 0)
+        {
+            <span>Click on Images below for AI Analysis</span>
+            <br />
+
+            @foreach (var img in imageUrls)
+            {
+                if (!string.IsNullOrEmpty(img))
+                {
+                    <span @onclick="@(() => ProcessUrLImage(img, 2))" style="cursor:pointer;">
+                        <img src="@img" height="50" width="50" style="padding:5px" />
+                    </span>
+                }
+            }
+        }
+    </div>
+
 </div>
+
 <div class="alert alert-info mt-3">
     <p>
         AI Analysis of Scraped Data using MS Extensions:@statusAI
@@ -53,6 +105,6 @@
     <p>
         Scraped Data:@statusScrape
         <br />
-        @extractedDataMarkupString
+        @ExtractedDataMarkup
     </p>
 </div>
