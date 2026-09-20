@@ -6,7 +6,7 @@ namespace RathodWebScraping.Components.Pages
 {
     public partial class Home
     {
-        private string targetUrl = "https://breadtopia.com/";
+        private string targetUrl = "https://ygminds.com/";
 
         private string extractedData = "";
         private MarkupString ExtractedDataMarkup => new MarkupString(extractedData);
@@ -191,37 +191,42 @@ namespace RathodWebScraping.Components.Pages
 
             if (!string.IsNullOrEmpty(extractedData))
             {
-                isLoading = true;
-                isImageURL1 = false;
-                isImageURL2 = false;
-                responseMessage = "";
-                statusAI = "Processing...";
-
-
-
-                var message = new ChatMessage(ChatRole.User, "Give me an overall idea what this site is about nicely format your response in HTML " + extractedData);
-
-                try
-                {
-                    var response1 = await ChatClient.GetResponseAsync(message);
-                    responseMessage = response1.Text;
-                }
-                catch (Exception ex)
-                {
-                    responseMessage = $"An error occurred while processing the AI response: {ex.Message}";
-                    statusAI = "Error";
-                }
-                finally
-                {
-                    isLoading = false;
-                    statusAI = "Done";
-                    StateHasChanged();
-                }
+                await OpenAIResponse();
 
             }
             else
             {
                 responseMessage = "Please Scrape the URL first ";
+            }
+        }
+
+        private async Task OpenAIResponse()
+        {
+            isLoading = true;
+            isImageURL1 = false;
+            isImageURL2 = false;
+            responseMessage = "";
+            statusAI = "Processing...";
+
+
+
+            var message = new ChatMessage(ChatRole.User, "Give me an overall idea what this site is about nicely format your response in HTML " + extractedData);
+
+            try
+            {
+                var response1 = await ChatClient.GetResponseAsync(message);
+                responseMessage = response1.Text;
+            }
+            catch (Exception ex)
+            {
+                responseMessage = $"An error occurred while processing the AI response: {ex.Message}";
+                statusAI = "Error";
+            }
+            finally
+            {
+                isLoading = false;
+                statusAI = "Done";
+                StateHasChanged();
             }
         }
     }
