@@ -1,5 +1,17 @@
 ﻿@page "/"
+@inject HttpClient Http
 
 <div style="text-align:center">
     <h1>Welcome to the AI chat bot.</h1>
 </div>
+<div class="mb-3">
+    <label for="userPrompt" class="from-lable">What would like to know.</label>
+    <input type="text" class="from-control" id="userPrompt" @bind="userPrompt" />
+    <button @onclick="SubmitPrompt" class="btn btn-primary mt-3">@buttonText</button>
+</div>
+@if(responseText != null)
+{
+    <div class="alert-info" role="alert">
+        @responseText
+    </div>
+}
