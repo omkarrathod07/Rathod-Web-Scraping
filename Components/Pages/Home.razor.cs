@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Components;
-using Microsoft.Extensions.AI;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Configuration;
+using RathodWebScraping.Models;
 
 namespace RathodWebScraping.Components.Pages
 {
@@ -30,7 +30,7 @@ namespace RathodWebScraping.Components.Pages
                 models = gptModel,
                 messages = new[]
                 {
-                    new {role="system",content="Yor a helpful assistant."},
+                    new {role="system",content="Your a helpful assistant."},
                     new {role="user",content=userPrompt}
                 },
                 temperature = 0.7
@@ -41,6 +41,16 @@ namespace RathodWebScraping.Components.Pages
             try
             {
                 var response = await Http.SendAsync(requestMessage);
+                if (response.IsSuccessStatusCode)
+                {
+                    var responseContent = await response.Content.ReadAsStringAsync();
+                    var completion = JsonSerializer.Deserialize<ChatResponse>(responseContent);
+                    responseText = completion.choices[0].message.content;
+                }
+                else
+                {
+                    responseText = $"Error: {response.StatusCode} We Are Under Maintenance";
+                }
             }
             catch(Exception ex)
             {
