@@ -1,107 +1,17 @@
 ﻿@page "/"
-
-@using HtmlAgilityPack
-@using System.Net.Http
-@using System.Text.Json
-@using System.Threading.Tasks
-@using System.Text
-
-@using RathodWebScraping.Services
-
-@rendermode InteractiveServer
-
-@inject HtmlScraperService HtmlScraperService
-
-@using Microsoft.Extensions.AI;
-@inject IChatClient ChatClient
-
-@using System.Text.RegularExpressions
-
-<PageTitle>Home</PageTitle>
-<h1 style="text-align:center">Welcome</h1>
-<h4>Rathod Web Scraping</h4>
-
-
-<br />
-
-<h5 style="text-align:center">
-    <b>Generate Responses using the OpenAI API</b>
-</h5>
-
-<div class="row">
-    <textarea @bind="targetUrl" rows="2" placeholder="Enter Website Address Here"></textarea>
-</div>
+@inject HttpClient Http
 
 <div style="text-align:center">
-    <button @onclick="ServiceScrapeAndProcess" class="btn btn-primary mt-3" disabled="@isLoading">Web Scrape URL</button>
-    <button @onclick="@( () => ProcessUrLImage(imageUrl, 1))" class="btn btn-primary mt-3" disabled="@isLoading">First Image AI Analysis</button>
-    <button @onclick="ScrapeAndProcessMSextensions" class="btn btn-primary mt-3" disabled="@isLoading">Generate Webpage AI Analysis</button>
-
-    <br />
-
-    @if (statusAI == "Processing...")
-    {
-        <img src="images/loading.gif" width="40" height="40" style="margin-left: 10px;" />
-        <em>@statusAI</em>
-    }
-
-    @*This handles the hard coded capture of the first image on the site*@
-    @if (isImageURL1)
-    {
-        <br />
-        <img src="@imageUrl" alt="Selected Image" style="max-width: 300px; max-height: 300px;" />
-        <br />
-        <strong>Selected Image Original Size:@imageFileSize</strong>
-        <i>bytes</i>
-    }
-    @*This handles any image clicked on from the entire list displayed in the div section below*@
-    else if (isImageURL2)
-    {
-        <br />
-        <img src="@newImageURL" alt="Selected Image" style="max-width: 300px; max-height: 300px;" />
-        <br />
-        <strong>Selected Image Original Size:@imageFileSize</strong>
-        <i>bytes</i>
-    }
-
-    <br />
-
-    @*This displays all the images on the site that was scraped ...
-        Some may be placeholder images or not relevant to the site ... but they are all displayed
-        Theu are all clickable and will call the ProcessUrLImage method to analyze the image
-    *@
-    <div class="alert alert-light">
-        @if (imageUrls.Count > 0)
-        {
-            <span>Click on Images below for AI Analysis</span>
-            <br />
-
-            @foreach (var img in imageUrls)
-            {
-                if (!string.IsNullOrEmpty(img))
-                {
-                    <span @onclick="@(() => ProcessUrLImage(img, 2))" style="cursor:pointer;">
-                        <img src="@img" height="50" width="50" style="padding:5px" />
-                    </span>
-                }
-            }
-        }
+    <h1>Welcome to the AI chat bot.</h1>
+</div>
+<div class="mb-3">
+    <label for="userPrompt" class="from-lable">What would like to know.</label>
+    <input type="text" class="from-control" id="userPrompt" @bind="userPrompt" />
+    <button @onclick="SubmitPrompt" class="btn btn-primary mt-3">@buttonText</button>
+</div>
+@if(responseText != null)
+{
+    <div class="alert-info" role="alert">
+        @responseText
     </div>
-
-</div>
-
-<div class="alert alert-info mt-3">
-    <p>
-        AI Analysis of Scraped Data using MS Extensions:@statusAI
-        <br />
-        @((MarkupString)responseMessage)
-    </p>
-</div>
-
-<div class="alert alert-light mt-3" style="width: 800px;">
-    <p>
-        Scraped Data:@statusScrape
-        <br />
-        @ExtractedDataMarkup
-    </p>
-</div>
+}

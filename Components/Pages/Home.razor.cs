@@ -1,232 +1,64 @@
 ﻿using Microsoft.AspNetCore.Components;
-using Microsoft.Extensions.AI;
-using System.Text.RegularExpressions;
+using System.Text;
+using System.Text.Json;
+using Microsoft.Extensions.Configuration;
+using RathodWebScraping.Models;
 
 namespace RathodWebScraping.Components.Pages
 {
     public partial class Home
     {
-        private string targetUrl = "https://ygminds.com/";
+        [Inject]
+        private IConfiguration configuration { get; set; } = default!;
+        private string userPrompt = "";
+        private string buttonText = "Ask";
+        private string? responseText;
+        private string? apiKey;
+        private string? gptModel;
 
-        private string extractedData = "";
-        private MarkupString ExtractedDataMarkup => new MarkupString(extractedData);
-        private bool isLoading = false;
-
-        private string? responseMessage;
-        private string? statusScrape;
-        private string? statusAI;
-
-        private string? imageBase64;
-        private long imageFileSize;
-        private string? imageUrl;
-        private string? newImageURL;
-        private bool isImageURL1 = false;
-        private bool isImageURL2 = false;
-        private List<string> imageUrls = new List<string>();
-        protected async Task ServiceScrapeAndProcess()
+        protected override void OnInitialized()
         {
-            if (string.IsNullOrEmpty(targetUrl))
+            apiKey = configuration["OpenAI:ApiKey"];
+            gptModel = configuration["OpenAI:GptModel"];
+        }
+        private async Task SubmitPrompt()
+        {
+            buttonText = "Sending...";
+            string? url = "https://api.openai.com/v1/chat/completions";
+            var requestData = new
             {
-                statusScrape = "Please enter a URL to scrape.";
-                extractedData = "";
-                responseMessage = "";
-                statusAI = "";
-                imageUrls.Clear();
-                imageUrl = null;
-                isImageURL1 = false;
-                isImageURL2 = false;
-
-                return;
-            }
-            else if (!Uri.IsWellFormedUriString(targetUrl, UriKind.Absolute))
-            {
-                statusScrape = "Not a valid URL.";
-                extractedData = "";
-                responseMessage = "";
-                statusAI = "";
-                imageUrls.Clear();
-                imageUrl = null;
-                isImageURL1 = false;
-                isImageURL2 = false;
-                return;
-            }
-            else
-            {
-                isLoading = true;
-
-                responseMessage = "";
-
-                imageUrls.Clear();
-                imageUrl = null;
-                isImageURL1 = false;
-                isImageURL2 = false;
-
-                statusAI = "";
-                statusScrape = "Processing...";
-                try
+                models = gptModel,
+                messages = new[]
                 {
-                    var ScraperResponse = await HtmlScraperService.LoadHtmlFromUrlAsync(targetUrl);
-                    extractedData = ScraperResponse.ParsedText;
-                    imageUrls = ExtractImageUrls(ScraperResponse.ParsedText);
-
-                    foreach (var url in imageUrls)
-                    {
-                        extractedData += "<br/><img src='" + url + "' width='100' height='100' />";
-                    }
-
-                    imageUrl = imageUrls.FirstOrDefault();
-
-                    statusScrape = "Done";
-                }
-                catch (Exception ex)
-                {
-                    statusScrape = "An error occurred while scraping the URL...." + ex.Message;
-                    extractedData = "";
-                    responseMessage = "";
-                    statusAI = "";
-                    imageUrls.Clear();
-                    imageUrl = null;
-                    isImageURL1 = false;
-                    isImageURL2 = false;
-                }
-                finally
-                {
-                    isLoading = false;
-                    StateHasChanged();
-                }
-
-            }
-        }
-
-        private List<string> ExtractImageUrls(string htmlContent)
-        {
-
-            var urls = new List<string>();
-            var regex = new Regex("<img[^>]+?src=[\"'](?<url>.*?)[\"']", RegexOptions.IgnoreCase);
-            var matches = regex.Matches(htmlContent);
-            foreach (Match match in matches)
-            {
-                urls.Add(match.Groups["url"].Value);
-            }
-            return urls;
-        }
-        private async Task ProcessUrLImage(string imageUrl, int type)
-        {
-            isImageURL1 = false;
-            isImageURL2 = false;
-
-            imageBase64 = null;
-
-            isLoading = true;
-
-            if (targetUrl == null || targetUrl == "")
-            {
-                statusScrape = "Please enter a URL to scrape first";
-                isLoading = false;
-                responseMessage = "";
-                extractedData = "";
-                statusAI = "";
-                imageUrls.Clear();
-                imageUrl = null;
-
-                return;
-            }
-
-            if (imageUrl == null)
-            {
-                responseMessage = "Need a valid Image URL ...Try Scraping first";
-                isLoading = false;
-                return;
-            }
-            if (!Uri.IsWellFormedUriString(imageUrl, UriKind.Absolute))
-            {
-                responseMessage = "Not a valid Image URL.";
-                isLoading = false;
-                return;
-            }
-
-            if (type == 1)
-            {
-                isImageURL1 = true;
-            }
-            else if (type == 2)
-            {
-                isImageURL2 = true;
-                newImageURL = imageUrl;
-            }
-
-            statusAI = "Processing...";
-            responseMessage = null;
-
-            var message = new ChatMessage(ChatRole.User, "What's in this image");
-            var httpClient = new HttpClient();
-
-            var imageBytes = await httpClient.GetByteArrayAsync(imageUrl);
-            var base64Image = Convert.ToBase64String(imageBytes);
-            var imageData = $"data:image/jpg;base64,{base64Image}";
-            imageFileSize = imageBytes.Length;
-
-            message.Contents.Add(new DataContent(imageData, "image/jpg"));
-            var response1 = await ChatClient.GetResponseAsync(message);
-
-            responseMessage = response1.Text;
-
-            statusAI = "Done";
-            isLoading = false;
-
-        }
-        private async Task ScrapeAndProcessMSextensions()
-        {
-            if (targetUrl == null || targetUrl == "")
-            {
-                responseMessage = "Please enter a URL to scrape first";
-                isLoading = false;
-                extractedData = "";
-                statusAI = "";
-                statusScrape = "";
-                imageUrls.Clear();
-                imageUrl = null;
-                return;
-            }
-
-            if (!string.IsNullOrEmpty(extractedData))
-            {
-                await OpenAIResponse();
-
-            }
-            else
-            {
-                responseMessage = "Please Scrape the URL first ";
-            }
-        }
-
-        private async Task OpenAIResponse()
-        {
-            isLoading = true;
-            isImageURL1 = false;
-            isImageURL2 = false;
-            responseMessage = "";
-            statusAI = "Processing...";
-
-
-
-            var message = new ChatMessage(ChatRole.User, "Give me an overall idea what this site is about nicely format your response in HTML " + extractedData);
-
+                    new {role="system",content="Your a helpful assistant."},
+                    new {role="user",content=userPrompt}
+                },
+                temperature = 0.7
+            };
+            var requestMessage = new HttpRequestMessage(HttpMethod.Post, url);
+            requestMessage.Headers.Add("Authorization",$"bearer {apiKey}");
+            requestMessage.Content = new StringContent(JsonSerializer.Serialize(requestData), Encoding.UTF8, "application/json");
             try
             {
-                var response1 = await ChatClient.GetResponseAsync(message);
-                responseMessage = response1.Text;
+                var response = await Http.SendAsync(requestMessage);
+                if (response.IsSuccessStatusCode)
+                {
+                    var responseContent = await response.Content.ReadAsStringAsync();
+                    var completion = JsonSerializer.Deserialize<ChatResponse>(responseContent);
+                    responseText = completion.choices[0].message.content;
+                }
+                else
+                {
+                    responseText = $"Error: {response.StatusCode} We Are Under Maintenance";
+                }
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
-                responseMessage = $"An error occurred while processing the AI response: {ex.Message}";
-                statusAI = "Error";
+                responseText = $"Error: {ex.Message}";
             }
             finally
             {
-                isLoading = false;
-                statusAI = "Done";
-                StateHasChanged();
+                buttonText = "Ask";
             }
         }
     }
