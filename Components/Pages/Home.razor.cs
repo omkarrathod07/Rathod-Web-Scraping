@@ -1,65 +1,73 @@
 ﻿using Microsoft.AspNetCore.Components;
-using System.Text;
-using System.Text.Json;
+using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.Configuration;
 using RathodWebScraping.Models;
+using RathodWebScraping.Services;
+using System.Text;
+using System.Text.Json;
 
 namespace RathodWebScraping.Components.Pages
 {
     public partial class Home
     {
-        [Inject]
-        private IConfiguration configuration { get; set; } = default!;
-        private string userPrompt = "";
-        private string buttonText = "Ask";
-        private string? responseText;
-        private string? apiKey;
-        private string? gptModel;
+        private string _userQuestion = "";
+        private readonly List<Message> _conversationHistory = new List<Message>();
+        private bool _isSendingMessage;
+        private readonly string _chatBotKnowledgeScope = "" +
+           "Your name is CsharpBot, You are an assistant that help users learn C#." +
+           "When user's question is not related to C# or the .NET framework, reply politely that you can not answer" +
+           "format every response in HTML.";
 
-        protected override void OnInitialized()
+        protected override Task OnInitializedAsync()
         {
-            apiKey = configuration["OpenAI:ApiKey"];
-            gptModel = configuration["OpenAI:GptModel"];
+            _conversationHistory.Add(new Message { role = "system", content = _chatBotKnowledgeScope });
+            return Task.CompletedTask;
+
         }
-        private async Task SubmitPrompt()
+
+        public List<Message> Messages => _conversationHistory.Where(c => c.role is not "system").ToList();
+
+        [Inject]
+        public OpenAIService OpenAIService { get; set; }
+
+        private async Task HandleKeyPress(KeyboardEventArgs e)
         {
-            buttonText = "Sending...";
-            string? url = "https://api.openai.com/v1/chat/completions";
-            var requestData = new
-            {
-                models = gptModel,
-                messages = new[]
-                {
-                    new {role="system",content="Your a helpful assistant."},
-                    new {role="user",content=userPrompt}
-                },
-                temperature = 0.7
-            };
-            var requestMessage = new HttpRequestMessage(HttpMethod.Post, url);
-            requestMessage.Headers.Add("Authorization",$"bearer {apiKey}");
-            requestMessage.Content = new StringContent(JsonSerializer.Serialize(requestData), Encoding.UTF8, "application/json");
-            try
-            {
-                var response = await Http.SendAsync(requestMessage);
-                if (response.IsSuccessStatusCode)
-                {
-                    var responseContent = await response.Content.ReadAsStringAsync();
-                    var completion = JsonSerializer.Deserialize<ChatResponse>(responseContent);
-                    responseText = completion.choices[0].message.content;
-                }
-                else
-                {
-                    responseText = $"Error: {response.StatusCode} We Are Under Maintenance";
-                }
-            }
-            catch(Exception ex)
-            {
-                responseText = $"Error: {ex.Message}";
-            }
-            finally
-            {
-                buttonText = "Ask";
-            }
+            if (e.Key is not "Enter") return;
+            await SendMessage();
+        }
+
+        private async Task SendMessage()
+        {
+            if (string.IsNullOrWhiteSpace(_userQuestion)) return;
+            AddUserQuestionToConversation();
+            StateHasChanged();
+            await CreateCompletion();
+            ClearInput();
+            StateHasChanged();
+        }
+
+        private void AddUserQuestionToConversation()
+        {
+            _conversationHistory.Add(new Message { role = "user", content = _userQuestion });
+        }
+
+        private async Task CreateCompletion()
+        {
+            _isSendingMessage = true;
+            var assistantResponse = await OpenAIService.CreateChatCompletion(_conversationHistory);
+            _conversationHistory.Add(assistantResponse);
+            _isSendingMessage = false;
+        }
+
+        private void ClearInput()
+        {
+            _userQuestion = "";
+        }
+
+        private void ClearConversation()
+        {
+            ClearInput();
+            _conversationHistory.Clear();
         }
     }
 }
