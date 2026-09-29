@@ -1,73 +1,71 @@
 ﻿using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Web;
-using Microsoft.Extensions.Configuration;
-using RathodWebScraping.Models;
-using RathodWebScraping.Services;
-using System.Text;
-using System.Text.Json;
+using Microsoft.Extensions.AI;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace RathodWebScraping.Components.Pages
 {
-    public partial class Home
+    public partial class Home : ComponentBase
     {
-        private string _userQuestion = "";
-        private readonly List<Message> _conversationHistory = new List<Message>();
-        private bool _isSendingMessage;
-        private readonly string _chatBotKnowledgeScope = "" +
-           "Your name is CsharpBot, You are an assistant that help users learn C#." +
-           "When user's question is not related to C# or the .NET framework, reply politely that you can not answer" +
-           "format every response in HTML.";
-
-        protected override Task OnInitializedAsync()
-        {
-            _conversationHistory.Add(new Message { role = "system", content = _chatBotKnowledgeScope });
-            return Task.CompletedTask;
-
-        }
-
-        public List<Message> Messages => _conversationHistory.Where(c => c.role is not "system").ToList();
-
         [Inject]
-        public OpenAIService OpenAIService { get; set; }
+        private IChatClient ChatClient { get; set; } = default!;
 
-        private async Task HandleKeyPress(KeyboardEventArgs e)
-        {
-            if (e.Key is not "Enter") return;
-            await SendMessage();
-        }
+        protected readonly List<Microsoft.Extensions.AI.ChatMessage> _chatHistory = new();
+        protected readonly List<DisplayMessage> _displayMessages = new();
+        protected string _userInput = string.Empty;
+        protected bool _isTyping = false;
 
-        private async Task SendMessage()
+        protected override void OnInitialized()
         {
-            if (string.IsNullOrWhiteSpace(_userQuestion)) return;
-            AddUserQuestionToConversation();
-            StateHasChanged();
-            await CreateCompletion();
-            ClearInput();
-            StateHasChanged();
+            _chatHistory.Add(new Microsoft.Extensions.AI.ChatMessage(
+                Microsoft.Extensions.AI.ChatRole.System,
+                "You are a helpful assistant."
+            ));
         }
+        protected async Task SendMessage()
+        {
+            if (string.IsNullOrWhiteSpace(_userInput) || _isTyping)
+                return;
 
-        private void AddUserQuestionToConversation()
-        {
-            _conversationHistory.Add(new Message { role = "user", content = _userQuestion });
-        }
+            string userMessageText = _userInput;
+            _userInput = string.Empty;
+            _isTyping = true;
 
-        private async Task CreateCompletion()
-        {
-            _isSendingMessage = true;
-            var assistantResponse = await OpenAIService.CreateChatCompletion(_conversationHistory);
-            _conversationHistory.Add(assistantResponse);
-            _isSendingMessage = false;
-        }
+            _chatHistory.Add(new Microsoft.Extensions.AI.ChatMessage(Microsoft.Extensions.AI.ChatRole.User, userMessageText));
+            _displayMessages.Add(new DisplayMessage { Role = "User", Content = userMessageText });
 
-        private void ClearInput()
-        {
-            _userQuestion = "";
-        }
+            var assistantMsg = new DisplayMessage { Role = "AI", Content = "" };
+            _displayMessages.Add(assistantMsg);
 
-        private void ClearConversation()
-        {
-            ClearInput();
-            _conversationHistory.Clear();
+            try
+            {
+                var responseUpdates = ChatClient.GetStreamingResponseAsync(_chatHistory);
+
+                await foreach (var update in responseUpdates)
+                {
+                    if (!string.IsNullOrEmpty(update.Text))
+                    {
+                        assistantMsg.Content += update.Text;
+                        StateHasChanged();
+                    }
+                }
+
+                _chatHistory.Add(new Microsoft.Extensions.AI.ChatMessage(Microsoft.Extensions.AI.ChatRole.Assistant, assistantMsg.Content));
+            }
+            catch (System.Exception ex)
+            {
+                assistantMsg.Content = $"Error: {ex.Message}";
+            }
+            finally
+            {
+                _isTyping = false;
+            }
         }
+    }
+
+    public class DisplayMessage
+    {
+        public string Role { get; set; } = string.Empty;
+        public string Content { get; set; } = string.Empty;
     }
 }
