@@ -3,19 +3,17 @@ using Microsoft.Extensions.AI;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace RathodWebScraping.Pages
+namespace RathodWebScraping.Components.Pages
 {
-    // Inheriting from ComponentBase satisfies OnInitialized and StateHasChanged
     public partial class Home : ComponentBase
     {
         [Inject]
         private IChatClient ChatClient { get; set; } = default!;
 
-        // Explicitly use the Microsoft Extensions AI ChatMessage structure
-        private readonly List<Microsoft.Extensions.AI.ChatMessage> _chatHistory = new();
-        private readonly List<DisplayMessage> _displayMessages = new();
-        private string _userInput = string.Empty;
-        private bool _isTyping = false;
+        protected readonly List<Microsoft.Extensions.AI.ChatMessage> _chatHistory = new();
+        protected readonly List<DisplayMessage> _displayMessages = new();
+        protected string _userInput = string.Empty;
+        protected bool _isTyping = false;
 
         protected override void OnInitialized()
         {
@@ -24,8 +22,7 @@ namespace RathodWebScraping.Pages
                 "You are a helpful assistant."
             ));
         }
-
-        private async Task SendMessage()
+        protected async Task SendMessage()
         {
             if (string.IsNullOrWhiteSpace(_userInput) || _isTyping)
                 return;
@@ -42,16 +39,14 @@ namespace RathodWebScraping.Pages
 
             try
             {
-                // Request the async streaming response pipeline
                 var responseUpdates = ChatClient.GetStreamingResponseAsync(_chatHistory);
 
-                // FIX 2: Using 'var' handles the correct ChatResponseUpdate type automatically
                 await foreach (var update in responseUpdates)
                 {
                     if (!string.IsNullOrEmpty(update.Text))
                     {
                         assistantMsg.Content += update.Text;
-                        StateHasChanged(); // Forces Blazor layout re-render for real-time text streaming
+                        StateHasChanged();
                     }
                 }
 
@@ -66,11 +61,11 @@ namespace RathodWebScraping.Pages
                 _isTyping = false;
             }
         }
+    }
 
-        private class DisplayMessage
-        {
-            public string Role { get; set; } = string.Empty;
-            public string Content { get; set; } = string.Empty;
-        }
+    public class DisplayMessage
+    {
+        public string Role { get; set; } = string.Empty;
+        public string Content { get; set; } = string.Empty;
     }
 }

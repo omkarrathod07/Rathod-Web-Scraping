@@ -1,55 +1,80 @@
 ﻿@page "/"
+@namespace RathodWebScraping.Components.Pages
+@rendermode InteractiveServer
 
-<PageTitle>AI Chatbot</PageTitle>
+<PageTitle>Chatbot</PageTitle>
 
-<div class="container py-4" style="max-width: 700px;">
-    <div class="card shadow">
-        <!-- Header -->
-        <div class="card-header bg-primary text-white">
-            <h3 class="mb-0">🤖 Blazor AI Assistant</h3>
+<div class="d-flex flex-column" style="height: calc(100vh - 56px); width: 100%; background-color: #fcfcfd;">
+    <div class="d-flex align-items-center justify-content-between px-4 py-3 border-bottom bg-white shadow-sm">
+        <div class="d-flex align-items-center gap-2">
+            <h5 class="mb-0 fw-semibold text-dark">Rathod Chatbot</h5>
         </div>
-
-        <!-- Chat History Window Box -->
-        <div class="card-body overflow-auto" style="height: 450px; background-color: #f8f9fa;">
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-2">
+                ● Live AI Connected
+            </span>
+        </div>
+    </div>
+    <div class="flex-grow-1 overflow-auto p-4" style="background-color: #f8f9fa;">
+        <div class="mx-auto" style="max-width: 900px;">
             @if (_displayMessages.Count == 0)
             {
-                <div class="text-center text-muted mt-5">
-                    <p>Start a conversation! Type something below...</p>
+                <div class="text-center my-5 py-5">
+                    <div class="display-4 text-primary mb-3">👋</div>
+                    <h3 class="fw-bold text-dark">How can I help you today?</h3>
+                    <p class="text-muted mx-auto" style="max-width: 450px;">
+                        Ask me anything about web scraping, extraction selectors, HTML structure, parsing strategies, or regular expressions!
+                    </p>
                 </div>
             }
             else
             {
                 @foreach (var msg in _displayMessages)
                 {
-                    <div class="d-flex mb-3 @(msg.Role == "User" ? "justify-content-end" : "justify-content-start")">
-                        <div class="p-3 rounded shadow-sm" style="max-width: 80%;
-                            background-color: @(msg.Role == "User" ? "#0d6efd" : "#ffffff");
-                            color: @(msg.Role == "User" ? "white" : "black");">
-                            <strong>@(msg.Role):</strong>
-                            <p class="mb-0 text-wrap" style="white-space: pre-line;">@msg.Content</p>
+                    <div class="d-flex mb-4 @(msg.Role == "User" ? "justify-content-end" : "justify-content-start")">
+                        <div class="d-flex gap-3 align-items-start @(msg.Role == "User" ? "flex-row-reverse" : "flex-row")" style="max-width: 85%;">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center border shadow-sm"
+                                 style="width: 40px; height: 40px; min-width: 40px;
+                                background-color: @(msg.Role == "User" ? "#0d6efd" : "#ffffff");
+                                color: @(msg.Role == "User" ? "#ffffff" : "#495057");">
+                                @(msg.Role == "User" ? "U" : "AI")
+                            </div>
+                            <div class="p-3 rounded-4 shadow-sm border"
+                                 style="background-color: @(msg.Role == "User" ? "#0d6efd" : "#ffffff");
+                                color: @(msg.Role == "User" ? "white" : "#212529");
+                                border-color: @(msg.Role == "User" ? "#0d6efd" : "#e9ecef") !important;">
+                                <div class="small fw-semibold mb-1 opacity-75">@msg.Role</div>
+                                <p class="mb-0 text-wrap fs-6" style="white-space: pre-line; line-height: 1.5;">@msg.Content</p>
+                            </div>
                         </div>
                     </div>
                 }
             }
         </div>
-
-        <!-- Input Control Panel -->
-        <div class="card-footer bg-white">
-            <div class="input-group">
-                <input type="text" class="form-control" placeholder="Type your message here..."
+    </div>
+    <div class="bg-white border-top p-3">
+        <div class="mx-auto" style="max-width: 900px;">
+            <div class="input-group shadow-sm rounded-3 overflow-hidden border">
+                <input type="text" class="form-control border-0 py-3 px-4 shadow-none"
+                       placeholder="Type a message or ask for a scraping script..."
                        @bind="_userInput" @bind:event="oninput"
                        @onkeydown="@(e => e.Key == "Enter" ? SendMessage() : Task.CompletedTask)"
-                       disabled="@_isTyping" />
-                <button class="btn btn-primary" type="button" @onclick="SendMessage" disabled="@_isTyping">
+                       disabled="@_isTyping"
+                       style="background-color: #fafafa; font-size: 0.95rem;" />
+
+                <button class="btn btn-primary border-0 px-4" type="button" @onclick="SendMessage" disabled="@_isTyping">
                     @if (_isTyping)
                     {
                         <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
                     }
                     else
                     {
-                        <span>Send</span>
+                        <span class="fw-semibold">Send</span>
                     }
                 </button>
+            </div>
+            <div class="text-center small text-muted mt-2" style="font-size: 0.75rem;">
+                Powered by .NET 9 and Microsoft.Extensions.AI
             </div>
         </div>
     </div>
