@@ -1,73 +1,76 @@
 ﻿using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Web;
-using Microsoft.Extensions.Configuration;
-using RathodWebScraping.Models;
-using RathodWebScraping.Services;
-using System.Text;
-using System.Text.Json;
+using Microsoft.Extensions.AI;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
-namespace RathodWebScraping.Components.Pages
+namespace RathodWebScraping.Pages
 {
-    public partial class Home
+    // Inheriting from ComponentBase satisfies OnInitialized and StateHasChanged
+    public partial class Home : ComponentBase
     {
-        private string _userQuestion = "";
-        private readonly List<Message> _conversationHistory = new List<Message>();
-        private bool _isSendingMessage;
-        private readonly string _chatBotKnowledgeScope = "" +
-           "Your name is CsharpBot, You are an assistant that help users learn C#." +
-           "When user's question is not related to C# or the .NET framework, reply politely that you can not answer" +
-           "format every response in HTML.";
-
-        protected override Task OnInitializedAsync()
-        {
-            _conversationHistory.Add(new Message { role = "system", content = _chatBotKnowledgeScope });
-            return Task.CompletedTask;
-
-        }
-
-        public List<Message> Messages => _conversationHistory.Where(c => c.role is not "system").ToList();
-
         [Inject]
-        public OpenAIService OpenAIService { get; set; }
+        private IChatClient ChatClient { get; set; } = default!;
 
-        private async Task HandleKeyPress(KeyboardEventArgs e)
+        // Explicitly use the Microsoft Extensions AI ChatMessage structure
+        private readonly List<Microsoft.Extensions.AI.ChatMessage> _chatHistory = new();
+        private readonly List<DisplayMessage> _displayMessages = new();
+        private string _userInput = string.Empty;
+        private bool _isTyping = false;
+
+        protected override void OnInitialized()
         {
-            if (e.Key is not "Enter") return;
-            await SendMessage();
+            _chatHistory.Add(new Microsoft.Extensions.AI.ChatMessage(
+                Microsoft.Extensions.AI.ChatRole.System,
+                "You are a helpful assistant."
+            ));
         }
 
         private async Task SendMessage()
         {
-            if (string.IsNullOrWhiteSpace(_userQuestion)) return;
-            AddUserQuestionToConversation();
-            StateHasChanged();
-            await CreateCompletion();
-            ClearInput();
-            StateHasChanged();
+            if (string.IsNullOrWhiteSpace(_userInput) || _isTyping)
+                return;
+
+            string userMessageText = _userInput;
+            _userInput = string.Empty;
+            _isTyping = true;
+
+            _chatHistory.Add(new Microsoft.Extensions.AI.ChatMessage(Microsoft.Extensions.AI.ChatRole.User, userMessageText));
+            _displayMessages.Add(new DisplayMessage { Role = "User", Content = userMessageText });
+
+            var assistantMsg = new DisplayMessage { Role = "AI", Content = "" };
+            _displayMessages.Add(assistantMsg);
+
+            try
+            {
+                // Request the async streaming response pipeline
+                var responseUpdates = ChatClient.GetStreamingResponseAsync(_chatHistory);
+
+                // FIX 2: Using 'var' handles the correct ChatResponseUpdate type automatically
+                await foreach (var update in responseUpdates)
+                {
+                    if (!string.IsNullOrEmpty(update.Text))
+                    {
+                        assistantMsg.Content += update.Text;
+                        StateHasChanged(); // Forces Blazor layout re-render for real-time text streaming
+                    }
+                }
+
+                _chatHistory.Add(new Microsoft.Extensions.AI.ChatMessage(Microsoft.Extensions.AI.ChatRole.Assistant, assistantMsg.Content));
+            }
+            catch (System.Exception ex)
+            {
+                assistantMsg.Content = $"Error: {ex.Message}";
+            }
+            finally
+            {
+                _isTyping = false;
+            }
         }
 
-        private void AddUserQuestionToConversation()
+        private class DisplayMessage
         {
-            _conversationHistory.Add(new Message { role = "user", content = _userQuestion });
-        }
-
-        private async Task CreateCompletion()
-        {
-            _isSendingMessage = true;
-            var assistantResponse = await OpenAIService.CreateChatCompletion(_conversationHistory);
-            _conversationHistory.Add(assistantResponse);
-            _isSendingMessage = false;
-        }
-
-        private void ClearInput()
-        {
-            _userQuestion = "";
-        }
-
-        private void ClearConversation()
-        {
-            ClearInput();
-            _conversationHistory.Clear();
+            public string Role { get; set; } = string.Empty;
+            public string Content { get; set; } = string.Empty;
         }
     }
 }

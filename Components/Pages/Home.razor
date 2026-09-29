@@ -1,72 +1,56 @@
-﻿@page "/" 
+﻿@page "/"
 
-<div class="container d-flex flex-column vh-100">
+<PageTitle>AI Chatbot</PageTitle>
 
-    @*Only display the Opening Prompt at the start when no questions have been asked *@
-    @if (Messages.Count == 0)
-    {
-        <div class="text-center">
-            <h3>Welcome to the Chat Bot</h3>
-            <p>I'm your C# learning assistant ... ask me anything</p>
+<div class="container py-4" style="max-width: 700px;">
+    <div class="card shadow">
+        <!-- Header -->
+        <div class="card-header bg-primary text-white">
+            <h3 class="mb-0">🤖 Blazor AI Assistant</h3>
         </div>
-    }
 
-    @*Cycle through all the questions and responses
-        The user's questions are displayed in a blue long oval bubble with a person image on the left
-        The bot's responses are displayed in a white long oval textarea with a robot image on the left
-        The Messages (list) is a filtered _conversationHistory list that contains the user's questions and the bot's responses
-    *@
-    <div class="flex-grow-1">
-
-        @foreach (var message in Messages)
-        {
-            <div class="row p-2">
-                <div class="col-1 rounded-circle bg-dark-subtle text-center m-2 p-0" style="width:50px;height:50px;">
-                    <span class="bi fs-2 @(message.IsUser ? "bi-person-fill" : "bi-robot")"></span>
+        <!-- Chat History Window Box -->
+        <div class="card-body overflow-auto" style="height: 450px; background-color: #f8f9fa;">
+            @if (_displayMessages.Count == 0)
+            {
+                <div class="text-center text-muted mt-5">
+                    <p>Start a conversation! Type something below...</p>
                 </div>
-                <div class="col-11 rounded p-3 shadow-sm @(message.IsUser ? "text-bg-primary" : "text-bg-light")">
-                    @if (message.IsUser)
+            }
+            else
+            {
+                @foreach (var msg in _displayMessages)
+                {
+                    <div class="d-flex mb-3 @(msg.Role == "User" ? "justify-content-end" : "justify-content-start")">
+                        <div class="p-3 rounded shadow-sm" style="max-width: 80%;
+                            background-color: @(msg.Role == "User" ? "#0d6efd" : "#ffffff");
+                            color: @(msg.Role == "User" ? "white" : "black");">
+                            <strong>@(msg.Role):</strong>
+                            <p class="mb-0 text-wrap" style="white-space: pre-line;">@msg.Content</p>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+
+        <!-- Input Control Panel -->
+        <div class="card-footer bg-white">
+            <div class="input-group">
+                <input type="text" class="form-control" placeholder="Type your message here..."
+                       @bind="_userInput" @bind:event="oninput"
+                       @onkeydown="@(e => e.Key == "Enter" ? SendMessage() : Task.CompletedTask)"
+                       disabled="@_isTyping" />
+                <button class="btn btn-primary" type="button" @onclick="SendMessage" disabled="@_isTyping">
+                    @if (_isTyping)
                     {
-                        @message.content
+                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
                     }
                     else
                     {
-                        @( (MarkupString)message.content)
+                        <span>Send</span>
                     }
-                </div>
+                </button>
             </div>
-
-            @*MarkupString forces Blazor to render the string as HTML rather than encoding it as plain text. 
-            This is useful when you want to include HTML content in your Blazor components.*@
-        }
-
-    </div>
-
-    @*The sticky-bottom class ensures that the input area is always at the bottom of the screen
-      The input area consists of a button to clear the conversation, a textarea to enter the user's question
-      and a button to send the question to the bot*@    
-    <div class="sticky-bottom w-50 p-3 rounded mx-auto">
-
-        @if (_isSendingMessage)
-        {
-            <div class="text-center">
-                <div class="spinner-border spinnder-border-sm" role="status">
-                    <span class="visually-hidden">Loading ...</span>
-                </div>
-            </div>
-        }
-
-
-        <div class="input-group">
-            <button class="btn btn-primary" @onclick="ClearConversation">
-                <span class="bi bi-eraser">Ask</span>
-            </button>
-            <textarea rows="2" class="form-control" placeholder="Ask me anything ..."
-                      @bind-value="_userQuestion" @bind-value:event="oninput" @onkeypress="HandleKeyPress"
-                      disabled="@_isSendingMessage">
-            </textarea>
         </div>
-
     </div>
-
 </div>
