@@ -10,16 +10,16 @@ namespace RathodWebScraping.Components.Pages
         [Inject]
         private IChatClient ChatClient { get; set; } = default!;
 
-        protected readonly List<Microsoft.Extensions.AI.ChatMessage> _chatHistory = new();
+        protected readonly List<ChatMessage> _chatHistory = new();
         protected readonly List<DisplayMessage> _displayMessages = new();
         protected string _userInput = string.Empty;
         protected bool _isTyping = false;
 
         protected override void OnInitialized()
         {
-            _chatHistory.Add(new Microsoft.Extensions.AI.ChatMessage(
-                Microsoft.Extensions.AI.ChatRole.System,
-                "You are a helpful assistant."
+            _chatHistory.Add(new ChatMessage(
+                ChatRole.System,
+                "You are a helpful assistant.Provide Response as HTML Format."
             ));
         }
         protected async Task SendMessage()
@@ -31,7 +31,7 @@ namespace RathodWebScraping.Components.Pages
             _userInput = string.Empty;
             _isTyping = true;
 
-            _chatHistory.Add(new Microsoft.Extensions.AI.ChatMessage(Microsoft.Extensions.AI.ChatRole.User, userMessageText));
+            _chatHistory.Add(new ChatMessage(ChatRole.User, userMessageText));
             _displayMessages.Add(new DisplayMessage { Role = "User", Content = userMessageText });
 
             var assistantMsg = new DisplayMessage { Role = "AI", Content = "" };
@@ -50,7 +50,7 @@ namespace RathodWebScraping.Components.Pages
                     }
                 }
 
-                _chatHistory.Add(new Microsoft.Extensions.AI.ChatMessage(Microsoft.Extensions.AI.ChatRole.Assistant, assistantMsg.Content));
+                _chatHistory.Add(new ChatMessage(ChatRole.Assistant, assistantMsg.Content));
             }
             catch (System.Exception ex)
             {
