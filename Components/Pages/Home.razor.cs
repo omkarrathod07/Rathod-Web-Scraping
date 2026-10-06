@@ -19,9 +19,10 @@ namespace RathodWebScraping.Components.Pages
         {
             _chatHistory.Add(new ChatMessage(
                 ChatRole.System,
-                "You are a helpful assistant.Provide Response as HTML Format."
+                "You are a helpful assistant. Wrap code in standard markdown codeblocks."
             ));
         }
+
         protected async Task SendMessage()
         {
             if (string.IsNullOrWhiteSpace(_userInput) || _isTyping)
@@ -46,6 +47,8 @@ namespace RathodWebScraping.Components.Pages
                     if (!string.IsNullOrEmpty(update.Text))
                     {
                         assistantMsg.Content += update.Text;
+                        assistantMsg.HtmlContent = Markdig.Markdown.ToHtml(assistantMsg.Content);
+
                         StateHasChanged();
                     }
                 }
@@ -55,6 +58,7 @@ namespace RathodWebScraping.Components.Pages
             catch (System.Exception ex)
             {
                 assistantMsg.Content = $"Error: {ex.Message}";
+                assistantMsg.HtmlContent = assistantMsg.Content;
             }
             finally
             {
@@ -67,5 +71,6 @@ namespace RathodWebScraping.Components.Pages
     {
         public string Role { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
+        public string HtmlContent { get; set; } = string.Empty;
     }
 }
