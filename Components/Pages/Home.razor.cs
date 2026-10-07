@@ -10,37 +10,41 @@ namespace RathodWebScraping.Components.Pages
         [Inject]
         private IChatClient ChatClient { get; set; } = default!;
 
-        protected readonly List<ChatMessage> _chatHistory = new();
-        protected readonly List<DisplayMessage> _displayMessages = new();
-        protected string _userInput = string.Empty;
-        protected bool _isTyping = false;
+        protected readonly List<ChatMessage> chatHistory = new();
+        protected readonly List<DisplayMessage> displayMessages = new();
+        protected string userInput = string.Empty;
+        protected bool isTyping = false;
+        protected bool isDarkMode = false;
 
         protected override void OnInitialized()
         {
-            _chatHistory.Add(new ChatMessage(
+            chatHistory.Add(new ChatMessage(
                 ChatRole.System,
-                "You are a helpful assistant. Wrap code in standard markdown codeblocks."
+                "You are a helpful assistant. Wrap code responses in standard markdown codeblocks."
             ));
         }
-
+        protected void ToggleTheme()
+        {
+            isDarkMode = !isDarkMode;
+        }
         protected async Task SendMessage()
         {
-            if (string.IsNullOrWhiteSpace(_userInput) || _isTyping)
+            if (string.IsNullOrWhiteSpace(userInput) || isTyping)
                 return;
 
-            string userMessageText = _userInput;
-            _userInput = string.Empty;
-            _isTyping = true;
+            string userMessageText = userInput;
+            userInput = string.Empty;
+            isTyping = true;
 
-            _chatHistory.Add(new ChatMessage(ChatRole.User, userMessageText));
-            _displayMessages.Add(new DisplayMessage { Role = "User", Content = userMessageText });
+            chatHistory.Add(new ChatMessage(ChatRole.User, userMessageText));
+            displayMessages.Add(new DisplayMessage { Role = "User", Content = userMessageText });
 
             var assistantMsg = new DisplayMessage { Role = "AI", Content = "" };
-            _displayMessages.Add(assistantMsg);
+            displayMessages.Add(assistantMsg);
 
             try
             {
-                var responseUpdates = ChatClient.GetStreamingResponseAsync(_chatHistory);
+                var responseUpdates = ChatClient.GetStreamingResponseAsync(chatHistory);
 
                 await foreach (var update in responseUpdates)
                 {
@@ -48,12 +52,11 @@ namespace RathodWebScraping.Components.Pages
                     {
                         assistantMsg.Content += update.Text;
                         assistantMsg.HtmlContent = Markdig.Markdown.ToHtml(assistantMsg.Content);
-
                         StateHasChanged();
                     }
                 }
 
-                _chatHistory.Add(new ChatMessage(ChatRole.Assistant, assistantMsg.Content));
+                chatHistory.Add(new ChatMessage(ChatRole.Assistant, assistantMsg.Content));
             }
             catch (System.Exception ex)
             {
@@ -62,11 +65,10 @@ namespace RathodWebScraping.Components.Pages
             }
             finally
             {
-                _isTyping = false;
+                isTyping = false;
             }
         }
     }
-
     public class DisplayMessage
     {
         public string Role { get; set; } = string.Empty;
