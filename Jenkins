@@ -1,0 +1,62 @@
+﻿pipeline {
+    agent { label 'dotnet9-linux' }
+
+    environment {
+        SOLUTION     = 'RathodWebScraping.slnx'
+        WEB_PROJECT  = 'RathodWebScraping/RathodWebScraping.csproj'
+        CONFIGURATION = 'Release'
+    }
+
+    stages {
+        stage('Restore') {
+            steps {
+                sh 'dotnet msbuild "$SOLUTION" -t:Restore'
+            }
+        }
+
+        stage('Build') {
+            steps {
+                sh 'dotnet msbuild "$SOLUTION" -t:Build -p:Configuration="$CONFIGURATION"'
+            }
+        }
+
+        stage('Test') {
+            steps {
+                sh '''
+                    mkdir -p "$WORKSPACE/artifacts/test-results"
+                    dotnet test "$SOLUTION" \
+                      --configuration "$CONFIGURATION" \
+                      --no-build \
+                      --no-restore \
+                      --logger "trx;LogFileName=tests.trx" \
+                      --results-directory "$WORKSPACE/artifacts/test-results"
+                '''
+            }
+        }
+
+        stage('Publish') {
+            steps {
+                sh '''
+                    mkdir -p "$WORKSPACE/artifacts/publish"
+                    dotnet msbuild "$WEB_PROJECT" \
+                      -t:Publish \
+                      -p:Configuration="$CONFIGURATION" \
+                      -p:NoBuild=true \
+                      -p:NoRestore=true \
+                      -p:PublishDir="$WORKSPACE/artifacts/publish/"
+                '''
+            }
+        }
+    }
+
+    post {
+        always {
+            archiveArtifacts artifacts: 'artifacts/test-results/**/*.trx',
+                             allowEmptyArchive: true
+        }
+        success {
+            archiveArtifacts artifacts: 'artifacts/publish/**/*',
+                             allowEmptyArchive: false
+        }
+    }
+}

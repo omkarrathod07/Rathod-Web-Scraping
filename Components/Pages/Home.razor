@@ -3,47 +3,70 @@
 @rendermode InteractiveServer
 
 <PageTitle>AI Chatbot</PageTitle>
+<div class="d-flex flex-column"
+     style="height: calc(100vh - 56px); width: 100%; transition: all 0.3s ease;
+    background-color: @(isDarkMode ? "#121214" : "#fcfcfd");">
+    <div class="d-flex align-items-center justify-content-between px-4 py-3 border-bottom shadow-sm transition"
+         style="background-color: @(isDarkMode ? "#1a1a1e" : "#ffffff");
+        border-color: @(isDarkMode ? "#2d2d34" : "#e9ecef") !important;">
 
-<div class="d-flex flex-column" style="height: calc(100vh - 56px); width: 100%; background-color: #fcfcfd;">
-    <div class="d-flex align-items-center justify-content-between px-4 py-3 border-bottom bg-white shadow-sm">
         <div class="d-flex align-items-center gap-2">
-            <h5 class="mb-0 fw-semibold text-dark">Coding Assistant</h5>
+            <h5 class="mb-0 fw-semibold" style="color: @(isDarkMode ? "#f8f9fa" : "#212529");">Rathod Assistant</h5>
         </div>
-        <div class="d-flex align-items-center gap-2">
+
+        <div class="d-flex align-items-center gap-3">
+            <button class="btn btn-sm d-flex align-items-center gap-2 border px-3 py-2 rounded-pill shadow-none transition"
+                    @onclick="ToggleTheme"
+                    style="background-color: @(isDarkMode ? "#2d2d34" : "#f8f9fa");
+                color: @(isDarkMode ? "#f8f9fa" : "#212529");
+                border-color: @(isDarkMode ? "#454550" : "#dee2e6") !important;">
+                @if (isDarkMode)
+                {
+                    <span>☀️</span>
+                }
+                else
+                {
+                    <span>🌙</span>
+                }
+            </button>
+
             <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-2">
                 ● Live
             </span>
         </div>
     </div>
-    <div class="flex-grow-1 overflow-auto p-4" style="background-color: #f8f9fa;">
+    <div class="flex-grow-1 overflow-auto p-4 transition"
+         style="background-color: @(isDarkMode ? "#16161a" : "#f8f9fa");">
         <div class="mx-auto" style="max-width: 900px;">
-            @if (_displayMessages.Count == 0)
+            @if (displayMessages.Count == 0)
             {
                 <div class="text-center my-5 py-5">
                     <div class="display-4 text-primary mb-3">👋</div>
-                    <h3 class="fw-bold text-dark">How can I help you today?</h3>
-                    <p class="text-muted mx-auto" style="max-width: 450px;">
+                    <h3 class="fw-bold" style="color: @(isDarkMode ? "#f8f9fa" : "#212529");">How can I help you today?</h3>
+                    <p class="mx-auto" style="max-width: 450px; color: @(isDarkMode ? "#a0a0ab" : "#6c757d");">
                         Ask me anything about web scraping, extraction selectors, HTML structure, parsing strategies, or regular expressions!
                     </p>
                 </div>
             }
             else
             {
-                @foreach (var msg in _displayMessages)
+                @foreach (var msg in displayMessages)
                 {
                     <div class="d-flex mb-4 @(msg.Role == "User" ? "justify-content-end" : "justify-content-start")">
                         <div class="d-flex gap-3 align-items-start @(msg.Role == "User" ? "flex-row-reverse" : "flex-row")" style="max-width: 85%;">
-                            <div class="rounded-circle d-flex align-items-center justify-content-center border shadow-sm" 
-                                 style="width: 40px; height: 40px; min-width: 40px; 
-                                        background-color: @(msg.Role == "User" ? "#0d6efd" : "#ffffff"); 
-                                        color: @(msg.Role == "User" ? "#ffffff" : "#495057");">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center border shadow-sm transition"
+                                 style="width: 40px; height: 40px; min-width: 40px;
+                                background-color: @(msg.Role == "User" ? "#0d6efd" : (isDarkMode ? "#2d2d34" : "#ffffff"));
+                                color: @(msg.Role == "User" ? "#ffffff" : (isDarkMode ? "#f8f9fa" : "#495057"));
+                                border-color: @(isDarkMode ? "#454550" : "#dee2e6") !important;">
                                 @(msg.Role == "User" ? "U" : "AI")
                             </div>
-                            <div class="p-3 rounded-4 shadow-sm border" 
-                                 style="background-color: @(msg.Role == "User" ? "#0d6efd" : "#ffffff"); 
-                                        color: @(msg.Role == "User" ? "white" : "#212529");
-                                        border-color: @(msg.Role == "User" ? "#0d6efd" : "#e9ecef") !important;">
+                            <div class="p-3 rounded-4 shadow-sm border transition"
+                                 style="background-color: @(msg.Role == "User" ? "#0d6efd" : (isDarkMode ? "#1a1a1e" : "#ffffff"));
+                                color: @(msg.Role == "User" ? "white" : (isDarkMode ? "#e4e4e7" : "#212529"));
+                                border-color: @(msg.Role == "User" ? "#0d6efd" : (isDarkMode ? "#2d2d34" : "#e9ecef")) !important;">
                                 <div class="small fw-semibold mb-1 opacity-75">@msg.Role</div>
+
                                 <div class="markdown-content text-wrap fs-6" style="line-height: 1.5;">
                                     @if (msg.Role == "AI")
                                     {
@@ -61,18 +84,23 @@
             }
         </div>
     </div>
-    <div class="bg-white border-top p-3">
+    <div class="border-top p-3 transition"
+         style="background-color: @(isDarkMode ? "#1a1a1e" : "#ffffff");
+        border-color: @(isDarkMode ? "#2d2d34" : "#e9ecef") !important;">
         <div class="mx-auto" style="max-width: 900px;">
-            <div class="input-group shadow-sm rounded-3 overflow-hidden border">
-                <input type="text" class="form-control border-0 py-3 px-4 shadow-none" 
+            <div class="input-group shadow-sm rounded-3 overflow-hidden border transition"
+                 style="border-color: @(isDarkMode ? "#454550" : "#dee2e6") !important;">
+                <input type="text" class="form-control border-0 py-3 px-4 shadow-none transition"
                        placeholder="Type a message or ask for a scraping script..."
-                       @bind="_userInput" @bind:event="oninput" 
-                       @onkeydown="@(e => e.Key == "Enter" ? SendMessage() : Task.CompletedTask)" 
-                       disabled="@_isTyping" 
-                       style="background-color: #fafafa; font-size: 0.95rem;" />
-                
-                <button class="btn btn-primary border-0 px-4" type="button" @onclick="SendMessage" disabled="@_isTyping">
-                    @if (_isTyping)
+                       @bind="userInput" @bind:event="oninput"
+                       @onkeydown="@(e => e.Key == "Enter" ? SendMessage() : Task.CompletedTask)"
+                       disabled="@isTyping"
+                       style="background-color: @(isDarkMode ? "#24242b" : "#fafafa");
+                color: @(isDarkMode ? "#f8f9fa" : "#212529");
+                font-size: 0.95rem;" />
+
+                <button class="btn btn-primary border-0 px-4" type="button" @onclick="SendMessage" disabled="@isTyping">
+                    @if (isTyping)
                     {
                         <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
                     }
@@ -82,16 +110,54 @@
                     }
                 </button>
             </div>
-            <div class="text-center small text-muted mt-2" style="font-size: 0.75rem;">
-                Powered by .NET 9 and Microsoft.Extensions.AI
+            <div class="text-center small mt-2" style="font-size: 0.75rem; color: @(isDarkMode ? "#71717a" : "#6c757d");">
+                Powered by .NET 9 and Microsoft.Extensions.AI, Under Development
             </div>
         </div>
     </div>
 </div>
 <style>
-    .markdown-content p:last-child { margin-bottom: 0; }
-    .markdown-content ul, .markdown-content ol { padding-left: 1.5rem; margin-bottom: 0.5rem; }
-    .markdown-content pre { background-color: #f1f3f5; padding: 1rem; border-radius: 6px; overflow-x: auto; margin-top: 0.5rem; }
-    .markdown-content code { background-color: rgba(0,0,0,0.05); padding: 0.2rem 0.4rem; border-radius: 4px; font-size: 85%; }
-    .markdown-content pre code { background-color: transparent; padding: 0; font-size: inherit; }
+    .transition {
+        transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+    }
+
+    .markdown-content p:last-child {
+        margin-bottom: 0;
+    }
+
+    .markdown-content ul, .markdown-content ol {
+        padding-left: 1.5rem;
+        margin-bottom: 0.5rem;
+    }
+    .markdown-content pre {
+        background-color: #f1f3f5;
+        padding: 1rem;
+        border-radius: 6px;
+        overflow-x: auto;
+        margin-top: 0.5rem;
+    }
+
+    .markdown-content code {
+        background-color: rgba(0,0,0,0.05);
+        padding: 0.2rem 0.4rem;
+        border-radius: 4px;
+        font-size: 85%;
+        color: #d63384;
+    }
+    div[style*="background-color: #1a1a1e"] .markdown-content pre {
+        background-color: #24242b;
+        border: 1px solid #3f3f46;
+    }
+
+    div[style*="background-color: #1a1a1e"] .markdown-content code {
+        background-color: rgba(255,255,255,0.1);
+        color: #f43f5e;
+    }
+
+    .markdown-content pre code {
+        background-color: transparent !important;
+        padding: 0;
+        font-size: inherit;
+        color: inherit !important;
+    }
 </style>
