@@ -2,6 +2,8 @@ using RathodWebScraping.Components;
 using Microsoft.Extensions.AI;
 using OpenAI;
 using RathodWebScraping.Services;
+using RathodWebScraping.Data;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 //builder.Configuration.AddJsonFile("apisetting", optional: false, reloadOnChange: true);
@@ -16,6 +18,7 @@ builder.Services.AddChatClient(new OpenAIChatClient(openAIClient,openAIModel));
 
 builder.Services.AddHttpClient();
 builder.Services.AddScoped<HtmlScraperService>();
+builder.Services.AddDbContextFactory<ChatDbContext>(options => options.UseSqlite("Data Source=chats.db"));
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
