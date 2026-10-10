@@ -1,25 +1,67 @@
 ﻿@inherits LayoutComponentBase
 
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
+<!-- We wrap the layout inside a reactive theme class container string variable -->
+<div class="app-theme-container @(IsDarkMode ? "theme-dark" : "theme-light")">
+    <div class="app-shell">
+
+        <!-- Top Horizontal Navigation Strip Bar -->
+        <header class="navbar navbar-expand navbar-dark bg-dark px-4 shadow-sm app-navbar">
+            <div class="container-fluid p-0 d-flex align-items-center justify-content-between">
+
+                <!-- Brand Info Block -->
+                <div class="d-flex align-items-center gap-2">
+                    <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center shadow-sm" style="width: 32px; height: 32px;">
+                        <span class="fs-6 text-white">🤖</span>
+                    </div>
+                    <div class="d-flex flex-column">
+                        <span class="fw-bold text-white mb-0" style="font-size: 1rem; line-height: 1.2;">Rathod AI Hub</span>
+                        <small class="text-muted" style="font-size: 0.65rem; font-weight: 500; letter-spacing: 0.3px;">.NET 9 CORE PLATFORM</small>
+                    </div>
+                </div>
+
+                <!-- Navigation Core Route Directives Links -->
+                <nav class="navbar-nav d-flex flex-row gap-2">
+                    <NavLink class="nav-link d-flex align-items-center gap-2 px-3 py-2 rounded-3 border-0 text-decoration-none"
+                             href="" Match="NavLinkMatch.All" ActiveClass="active-nav">
+                        <span class="fs-5">💬</span>
+                        <span class="fw-medium">AI Chat Assistant</span>
+                    </NavLink>
+
+                    <NavLink class="nav-link d-flex align-items-center gap-2 px-3 py-2 rounded-3 border-0 text-decoration-none"
+                             href="webscraper" ActiveClass="active-nav">
+                        <span class="fs-5">🌐</span>
+                        <span class="fw-medium">Web Scraper View</span>
+                    </NavLink>
+                </nav>
+
+                <!-- Global Action Switcher Button Node linked through Cascading Parameter logic -->
+                <div class="d-flex align-items-center gap-3">
+                    <button class="btn btn-sm text-white border border-secondary rounded-pill px-3 py-1.5 shadow-none"
+                            @onclick="ToggleGlobalTheme">
+                        @(IsDarkMode ? "☀️ Light Mode" : "🌙 Dark Mode")
+                    </button>
+                </div>
+
+            </div>
+        </header>
+
+        <!-- Application Body Framework Render Area Layout Canvas -->
+        <main class="app-main-canvas">
+            <div class="app-canvas-scroller">
+                <CascadingValue Value="this">
+                    @Body
+                </CascadingValue>
+            </div>
+        </main>
     </div>
-
-    <main>
-        <div class="top-row px-4">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
-            </NavLink>
-        </div>
-
-        <article class="content px-4">
-            @Body
-        </article>
-    </main>
 </div>
 
-<div id="blazor-error-ui" data-nosnippet>
-    An unhandled error has occurred.
-    <a href="." class="reload">Reload</a>
-    <span class="dismiss">🗙</span>
-</div>
+@code {
+    public bool IsDarkMode { get; private set; } = false;
+
+    public void ToggleGlobalTheme()
+    {
+        IsDarkMode = !IsDarkMode;
+        StateHasChanged(); // Instantly tells Blazor to re-render the workspace tree with the new class
+    }
+}

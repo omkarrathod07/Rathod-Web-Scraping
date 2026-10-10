@@ -1,4 +1,6 @@
-﻿@page "/webscraper"
+﻿﻿
+@page "/webscraper"
+@rendermode InteractiveServer
 
 @using HtmlAgilityPack
 @using System.Net.Http
@@ -8,8 +10,6 @@
 
 @using RathodWebScraping.Services
 
-@rendermode InteractiveServer
-
 @inject HtmlScraperService HtmlScraperService
 
 @using Microsoft.Extensions.AI;
@@ -17,90 +17,96 @@
 
 @using System.Text.RegularExpressions
 
-<PageTitle>Home</PageTitle>
-<h1 style="text-align:center"><b>Welcome</b> Rathod Web Scraping</h1>
+<PageTitle>Web Scraper Analytics Console</PageTitle>
 
+<div class="container py-4" style="max-width: 900px;">
+    <h1 class="text-center mb-2 fw-bold text-primary">Rathod Web Scraping</h1>
+    <h5 class="text-center text-muted mb-4">Generate Insights via Unified Multimodal Pipelines</h5>
+    <div class="card shadow-sm p-4 mb-4 scraper-panel-card">
+        <div class="form-group mb-3">
+            <label class="form-label fw-semibold">Target Web Address Destination URL:</label>
+            <textarea @bind="targetUrl" class="form-control scraper-input-field" rows="2" placeholder="Enter full URL path (e.g., https://ygminds.com)"></textarea>
+        </div>
 
-<br />
+        <div class="d-flex flex-wrap justify-content-center gap-2">
+            <button @onclick="ServiceScrapeAndProcess" class="btn btn-primary px-3 py-2 fw-semibold" disabled="@isLoading">
+                🌐 Web Scrape URL
+            </button>
+            <button @onclick="@(() => ProcessUrLImage(imageUrl!, 1))" class="btn btn-outline-secondary px-3 py-2 fw-semibold" disabled="@(isLoading || string.IsNullOrEmpty(imageUrl))">
+                🖼️ Analyze First Image
+            </button>
+            <button @onclick="ScrapeAndProcessMSextensions" class="btn btn-success px-3 py-2 fw-semibold" disabled="@(isLoading || string.IsNullOrEmpty(extractedData))">
+                🧠 Generate Site Insight
+            </button>
+        </div>
 
-<h5 style="text-align:center">
-    <b>Generate Responses using the OpenAI API</b>
-</h5>
-
-<div class="row">
-    <textarea @bind="targetUrl" rows="2" placeholder="Enter Website Address Here"></textarea>
-</div>
-
-<div style="text-align:center">
-    <button @onclick="ServiceScrapeAndProcess" class="btn btn-primary mt-3" disabled="@isLoading">Web Scrape URL</button>
-    <button @onclick="@( () => ProcessUrLImage(imageUrl, 1))" class="btn btn-primary mt-3" disabled="@isLoading">First Image AI Analysis</button>
-    <button @onclick="ScrapeAndProcessMSextensions" class="btn btn-primary mt-3" disabled="@isLoading">Generate Webpage AI Analysis</button>
-
-    <br />
-
-    @if (statusAI == "Processing...")
-    {
-        <img src="images/loading.gif" width="40" height="40" style="margin-left: 10px;" />
-        <em>@statusAI</em>
-    }
-
-    @*This handles the hard coded capture of the first image on the site*@
-    @if (isImageURL1)
-    {
-        <br />
-        <img src="@imageUrl" alt="Selected Image" style="max-width: 300px; max-height: 300px;" />
-        <br />
-        <strong>Selected Image Original Size:@imageFileSize</strong>
-        <i>bytes</i>
-    }
-    @*This handles any image clicked on from the entire list displayed in the div section below*@
-    else if (isImageURL2)
-    {
-        <br />
-        <img src="@newImageURL" alt="Selected Image" style="max-width: 300px; max-height: 300px;" />
-        <br />
-        <strong>Selected Image Original Size:@imageFileSize</strong>
-        <i>bytes</i>
-    }
-
-    <br />
-
-    @*This displays all the images on the site that was scraped ...
-        Some may be placeholder images or not relevant to the site ... but they are all displayed
-        Theu are all clickable and will call the ProcessUrLImage method to analyze the image
-    *@
-    <div class="alert alert-light">
-        @if (imageUrls.Count > 0)
+        @if (isLoading || statusAI == "Processing...")
         {
-            <span>Click on Images below for AI Analysis</span>
-            <br />
-
-            @foreach (var img in imageUrls)
-            {
-                if (!string.IsNullOrEmpty(img))
-                {
-                    <span @onclick="@(() => ProcessUrLImage(img, 2))" style="cursor:pointer;">
-                        <img src="@img" height="50" width="50" style="padding:5px" />
-                    </span>
-                }
-            }
+            <div class="text-center mt-3 p-2 bg-opacity-10 bg-secondary rounded d-flex align-items-center justify-content-center gap-2">
+                <span class="spinner-border spinner-border-sm text-primary" role="status" aria-hidden="true"></span>
+                <span class="text-muted fw-medium">Executing system requests: @statusScrape @statusAI...</span>
+            </div>
         }
     </div>
-
-</div>
-
-<div class="alert alert-info mt-3">
-    <p>
-        AI Analysis of Scraped Data using MS Extensions:@statusAI
-        <br />
-        @((MarkupString)responseMessage)
-    </p>
-</div>
-
-<div class="alert alert-light mt-3" style="width: 800px;">
-    <p>
-        Scraped Data:@statusScrape
-        <br />
-        @ExtractedDataMarkup
-    </p>
+    @if ((isImageURL1 && !string.IsNullOrEmpty(imageUrl)) || (isImageURL2 && !string.IsNullOrEmpty(newImageURL)))
+    {
+        <div class="card shadow-sm text-center p-4 mb-4 scraper-panel-card">
+            <h6 class="fw-bold mb-3 text-secondary">Active Vision Pipeline Target Target Element Image</h6>
+            <img src="@(isImageURL1 ? imageUrl : newImageURL)" alt="Target Media Canvas" class="img-fluid rounded shadow border mx-auto" style="max-width: 100%; max-height: 280px; object-fit: contain;" />
+            <div class="mt-3 small text-muted">
+                <strong>Image Weight:</strong> <span class="badge bg-dark">@imageFileSize bytes</span>
+            </div>
+        </div>
+    }
+    @if (imageUrls != null && imageUrls.Count > 0)
+    {
+        <div class="card shadow-sm p-3 mb-4 scraper-panel-card">
+            <div class="fw-bold text-muted small text-uppercase mb-2" style="letter-spacing: 0.5px;">
+                📸 Extracted Media Matrix Asset Links (Click an asset element to initialize AI Vision parsing)
+            </div>
+            <div class="d-flex flex-wrap gap-2 p-2 image-gallery-container">
+                @foreach (var img in imageUrls)
+                {
+                    if (!string.IsNullOrEmpty(img))
+                    {
+                        <div @onclick="@(() => ProcessUrLImage(img, 2))" class="image-gallery-thumb">
+                            <img src="@img" style="width: 100%; height: 100%; object-fit: cover;" alt="Matrix payload reference thumb" />
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    }
+    <div class="card shadow-sm mb-4 border-start border-4 border-info scraper-panel-card">
+        <div class="card-header bg-opacity-10 bg-info fw-bold d-flex justify-content-between align-items-center">
+            <span>🧠 Deep Intelligent Analytics Summary Breakdown</span>
+            <span class="badge bg-info text-white text-uppercase">@statusAI</span>
+        </div>
+        <div class="card-body" style="min-height: 80px;">
+            @if (!string.IsNullOrEmpty(responseMessage))
+            {
+                <div class="text-wrap">@((MarkupString)responseMessage)</div>
+            }
+            else
+            {
+                <span class="text-muted italic small">No active content analytics generated. Submit an execution request above to render details.</span>
+            }
+        </div>
+    </div>
+    <div class="card shadow-sm mb-4 border-start border-4 border-secondary scraper-panel-card text-wrap">
+        <div class="card-header bg-opacity-10 bg-secondary fw-bold d-flex justify-content-between align-items-center">
+            <span>📋 Raw Webpage Text Extraction Log Streams</span>
+            <span class="badge bg-secondary text-white text-uppercase">@statusScrape</span>
+        </div>
+        <div class="card-body p-3 terminal-log-view">
+            @if (!string.IsNullOrEmpty(extractedData))
+            {
+                <div>@ExtractedDataMarkup</div>
+            }
+            else
+            {
+                <span class="text-muted italic">The extraction pipeline log stream is currently blank. Submit a valid URL destination link profile block above.</span>
+            }
+        </div>
+    </div>
 </div>
