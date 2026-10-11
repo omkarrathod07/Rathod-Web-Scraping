@@ -16,6 +16,68 @@
 <body>
     <Routes />
     <script src="_framework/blazor.web.js"></script>
+    <script>
+            let recognition;
+            let isListening = false;
+
+            window.blazorVoice = {
+                startSpeechRecognition: function (dotNetHelper, successMethod, errorMethod) {
+                    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                    if (!SpeechRecognition) {
+                        dotNetHelper.invokeMethodAsync(errorMethod, "Browser does not support Web Speech API.");
+                        return;
+                    }
+
+                    if (isListening && recognition) {
+                        recognition.abort();
+                    }
+
+                    recognition = new SpeechRecognition();
+                    recognition.continuous = false;
+                    recognition.lang = 'en-IN';
+                    recognition.interimResults = false;
+
+                    recognition.onstart = function() {
+                        isListening = true;
+                    };
+
+                    recognition.onresult = function (event) {
+                        const transcript = event.results[0][0].transcript;
+                        dotNetHelper.invokeMethodAsync(successMethod, transcript);
+                    };
+
+                    recognition.onerror = function (event) {
+                        console.error("Speech recognition error", event.error);
+                        dotNetHelper.invokeMethodAsync(errorMethod, event.error);
+                    };
+
+                    recognition.onend = function() {
+                        isListening = false;
+                    };
+
+                    recognition.start();
+                },
+
+                stopSpeechRecognition: function () {
+                    if (recognition && isListening) {
+                        recognition.stop();
+                        isListening = false;
+                    }
+                },
+
+                playTextToSpeech: function (text) {
+                    if ('speechSynthesis' in window) {
+                        window.speechSynthesis.cancel();
+                        const cleanText = text.replace(/<\/?[^>]+(>|$)/g, "");
+                        const utterance = new SpeechSynthesisUtterance(cleanText);
+                        window.speechSynthesis.speak(utterance);
+                    } else {
+                        console.warn("Text-to-Speech not supported in this browser.");
+                    }
+                }
+            };
+    </script>
+
 </body>
 
 </html>
