@@ -6,8 +6,6 @@
 <PageTitle>AI Chatbot Assistant</PageTitle>
 
 <div class="chat-container">
-
-    <!-- Left Panel Chat Sessions History Links -->
     <div class="d-flex flex-column border-end p-2 chat-sidebar">
         <div class="p-2">
             <button class="btn btn-outline-primary w-100 d-flex align-items-center justify-content-center gap-2 rounded-3 py-2 fw-semibold shadow-sm"
@@ -30,8 +28,6 @@
             </div>
         </div>
     </div>
-
-    <!-- Conversational Streaming Main Stream Console -->
     <div class="chat-workspace">
         <div class="d-flex align-items-center justify-content-between px-4 py-3 border-bottom shadow-sm chat-header">
             <div class="d-flex align-items-center gap-2">
@@ -44,8 +40,6 @@
                 </span>
             </div>
         </div>
-
-        <!-- Scrollable Message Body Output Stream View -->
         <div class="chat-history-stream">
             <div class="mx-auto" style="max-width: 800px;">
                 @if (displayMessages.Count == 0)
@@ -85,8 +79,6 @@
                 }
             </div>
         </div>
-
-        <!-- Bottom Console Input Field Container -->
         <div class="border-top p-3 chat-input-area">
             <div class="mx-auto" style="max-width: 800px;">
                 <div class="input-group shadow-sm chat-input-group">
@@ -113,6 +105,5 @@
 </div>
 
 @code {
-    // Cascading link reference handles dynamic child context adjustments seamlessly
     [CascadingParameter] public MainLayout? MainLayout { get; set; }
 }

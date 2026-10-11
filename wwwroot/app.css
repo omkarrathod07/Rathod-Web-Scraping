@@ -1,14 +1,7 @@
-/* ==========================================================================
-   GLOBAL THEME ROOT DEFINITIONS (.NET 9 RATHOD PLATFORM)
-   ========================================================================== */
-
-/* Outer structural theme tracking wrapper shell container style boundaries */
 .app-theme-container {
     width: 100%;
     height: 100%;
 }
-
-/* Light Theme Variables Mapped to Class Hook */
 .theme-light {
     --bg-app: #fcfcfd;
     --bg-sidebar: #f8f9fa;
@@ -25,8 +18,6 @@
     --chat-avatar-ai: #ffffff;
     --transition-speed: 0.3s;
 }
-
-/* Dark Theme Variables Mapped to Class Hook */
 .theme-dark {
     --bg-app: #121214;
     --bg-sidebar: #1a1a1e;
@@ -43,15 +34,11 @@
     --chat-avatar-ai: #2d2d34;
     --transition-speed: 0.3s;
 }
-
-/* Apply background changes to the theme container space directly */
 .app-theme-container {
     background-color: var(--bg-app);
     color: var(--text-main);
     transition: background-color var(--transition-speed), color var(--transition-speed);
 }
-
-    /* Ensure child log blocks read context settings text correctly */
     .app-theme-container text,
     .app-theme-container h1,
     .app-theme-container h5,
@@ -60,17 +47,11 @@
     .app-theme-container label {
         color: var(--text-main);
     }
-
-/* Base resets relying on variables */
 body, html {
     background-color: var(--bg-app);
     color: var(--text-main);
     transition: background-color var(--transition-speed), color var(--transition-speed);
 }
-
-/* ==========================================================================
-   MAIN HUB LAYOUT SHELL
-   ========================================================================== */
 .app-shell {
     display: flex;
     flex-direction: column;
@@ -99,10 +80,6 @@ body, html {
     height: 100%;
     overflow-y: auto;
 }
-
-/* ==========================================================================
-   CHATBOT PAGE COMPONENT STYLES (Home.razor)
-   ========================================================================== */
 .chat-container {
     display: flex;
     height: 100%;
@@ -221,10 +198,6 @@ body, html {
     background-color: var(--bg-input) !important;
     color: var(--text-main) !important;
 }
-
-/* ==========================================================================
-   WEB SCRAPER COMPONENT STYLES (WebScraper.razor)
-   ========================================================================== */
 .scraper-panel-card {
     background-color: var(--bg-card);
     border: 1px solid var(--border-color);

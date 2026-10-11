@@ -1,14 +1,9 @@
 ﻿@inherits LayoutComponentBase
 
-<!-- We wrap the layout inside a reactive theme class container string variable -->
 <div class="app-theme-container @(IsDarkMode ? "theme-dark" : "theme-light")">
     <div class="app-shell">
-
-        <!-- Top Horizontal Navigation Strip Bar -->
         <header class="navbar navbar-expand navbar-dark bg-dark px-4 shadow-sm app-navbar">
             <div class="container-fluid p-0 d-flex align-items-center justify-content-between">
-
-                <!-- Brand Info Block -->
                 <div class="d-flex align-items-center gap-2">
                     <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center shadow-sm" style="width: 32px; height: 32px;">
                         <span class="fs-6 text-white">🤖</span>
@@ -18,8 +13,6 @@
                         <small class="text-muted" style="font-size: 0.65rem; font-weight: 500; letter-spacing: 0.3px;">.NET 9 CORE PLATFORM</small>
                     </div>
                 </div>
-
-                <!-- Navigation Core Route Directives Links -->
                 <nav class="navbar-nav d-flex flex-row gap-2">
                     <NavLink class="nav-link d-flex align-items-center gap-2 px-3 py-2 rounded-3 border-0 text-decoration-none"
                              href="" Match="NavLinkMatch.All" ActiveClass="active-nav">
@@ -33,8 +26,6 @@
                         <span class="fw-medium">Web Scraper View</span>
                     </NavLink>
                 </nav>
-
-                <!-- Global Action Switcher Button Node linked through Cascading Parameter logic -->
                 <div class="d-flex align-items-center gap-3">
                     <button class="btn btn-sm text-white border border-secondary rounded-pill px-3 py-1.5 shadow-none"
                             @onclick="ToggleGlobalTheme">
@@ -44,8 +35,6 @@
 
             </div>
         </header>
-
-        <!-- Application Body Framework Render Area Layout Canvas -->
         <main class="app-main-canvas">
             <div class="app-canvas-scroller">
                 <CascadingValue Value="this">
@@ -62,6 +51,6 @@
     public void ToggleGlobalTheme()
     {
         IsDarkMode = !IsDarkMode;
-        StateHasChanged(); // Instantly tells Blazor to re-render the workspace tree with the new class
+        StateHasChanged();
     }
 }
