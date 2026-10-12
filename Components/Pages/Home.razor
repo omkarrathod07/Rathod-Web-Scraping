@@ -4,8 +4,7 @@
 @using RathodWebScraping.Components.Layout
 
 <PageTitle>AI Chatbot Assistant</PageTitle>
-
-<div class="chat-container">
+<div class="chat-container @(GlobalIsDarkMode ? "theme-dark" : "theme-light")">
     <div class="d-flex flex-column border-end p-2 chat-sidebar">
         <div class="p-2">
             <button class="btn btn-outline-primary w-100 d-flex align-items-center justify-content-center gap-2 rounded-3 py-2 fw-semibold shadow-sm"
@@ -29,14 +28,14 @@
         </div>
     </div>
     <div class="chat-workspace">
-        <div class="d-flex align-items-center justify-content-between px-4 py-3 border-bottom shadow-sm chat-header">
+        <div class="d-flex align-items-center justify-content-between px-4 py-3 shadow-sm chat-header">
             <div class="d-flex align-items-center gap-2">
                 <span class="fs-5">📁</span>
                 <h6 class="mb-0 fw-bold">@(activeSession?.Title ?? "Loading Chat Streams...")</h6>
             </div>
             <div>
                 <span class="badge bg-success bg-opacity-10 text-success border border-success-subtle rounded-pill px-3 py-1.5">
-                    ● Memory Active
+                    ● Live
                 </span>
             </div>
         </div>
@@ -79,15 +78,37 @@
                 }
             </div>
         </div>
-        <div class="border-top p-3 chat-input-area">
+        <div class="chat-input-area">
             <div class="mx-auto" style="max-width: 800px;">
-                <div class="input-group shadow-sm chat-input-group">
+                @if (!string.IsNullOrEmpty(voiceErrorMessage))
+                {
+                    <div class="alert alert-danger alert-dismissible fade show p-2 mb-2 small rounded-3 shadow-sm d-flex justify-content-between align-items-center" role="alert">
+                        <span>⚠️ <strong>Voice Alert:</strong> @voiceErrorMessage</span>
+                        <button type="button" class="btn-close small p-2" @onclick="() => voiceErrorMessage = null" aria-label="Close"></button>
+                    </div>
+                }
+
+                <div class="input-group shadow-sm chat-input-group position-relative">
                     <input type="text" class="form-control chat-input-field"
-                           placeholder="Type a message inside this history partition..."
+                           placeholder="@(isListeningToVoice ? "Listening to your voice..." : "Type a message inside this history partition...")"
                            @bind="userInput" @bind:event="oninput"
                            @onkeydown="@(e => e.Key == "Enter" ? SendMessage() : Task.CompletedTask)"
-                           disabled="@isTyping" />
-                    <button class="btn btn-primary border-0 px-4" type="button" @onclick="SendMessage" disabled="@isTyping">
+                           disabled="@(isTyping || isListeningToVoice)" />
+
+                    @if (isListeningToVoice)
+                    {
+                        <button class="btn btn-danger px-3 btn-pulse animation-pulse" type="button" @onclick="StopVoiceCapture">
+                            <span class="spinner-grow spinner-grow-sm me-1" role="status" aria-hidden="true"></span> Stop
+                        </button>
+                    }
+                    else
+                    {
+                        <button class="btn btn-outline-secondary px-3" type="button" @onclick="StartVoiceCapture" disabled="@isTyping">
+                            🎤 Speak
+                        </button>
+                    }
+
+                    <button class="btn btn-primary border-0 px-4" type="button" @onclick="SendMessage" disabled="@(isTyping || isListeningToVoice)">
                         @if (isTyping)
                         {
                             <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
@@ -100,10 +121,9 @@
                 </div>
             </div>
         </div>
-
     </div>
 </div>
 
 @code {
-    [CascadingParameter] public MainLayout? MainLayout { get; set; }
+    [CascadingParameter] public bool GlobalIsDarkMode { get; set; }
 }

@@ -18,6 +18,7 @@ builder.Services.AddChatClient(new OpenAIChatClient(openAIClient,openAIModel));
 
 builder.Services.AddHttpClient();
 builder.Services.AddScoped<HtmlScraperService>();
+builder.Services.AddScoped<VoiceSpeechService>();
 builder.Services.AddDbContextFactory<ChatDbContext>(options => options.UseSqlite("Data Source=chats.db"));
 var app = builder.Build();
 

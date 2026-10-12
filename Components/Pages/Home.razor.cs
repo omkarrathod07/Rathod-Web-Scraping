@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.AI;
 using RathodWebScraping.Data;
+using RathodWebScraping.Services;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -12,6 +13,7 @@ namespace RathodWebScraping.Components.Pages
     {
         [Inject] private IChatClient ChatClient { get; set; } = default!;
         [Inject] private IDbContextFactory<ChatDbContext> DbFactory { get; set; } = default!;
+        [Inject] private VoiceSpeechService VoiceService { get; set; } = default!;
 
         protected List<ChatSession> sessions = new();
         protected List<DisplayMessage> displayMessages = new();
@@ -19,8 +21,8 @@ namespace RathodWebScraping.Components.Pages
         protected ChatSession? activeSession;
         protected string userInput = string.Empty;
         protected bool isTyping = false;
-        protected bool isDarkMode = false;
-
+        protected bool isListeningToVoice = false;
+        protected string? voiceErrorMessage = null;
         private readonly List<ChatMessage> chatHistory = new();
 
         protected override async Task OnInitializedAsync()
@@ -155,6 +157,7 @@ namespace RathodWebScraping.Components.Pages
                     });
                     await db.SaveChangesAsync();
                 }
+                await VoiceService.PlayTextToSpeechAsync(assistantMsg.Content);
 
                 await LoadSessionsFromDatabase();
             }
@@ -170,7 +173,48 @@ namespace RathodWebScraping.Components.Pages
             }
         }
 
-        protected void ToggleTheme() => isDarkMode = !isDarkMode;
+        protected async Task StartVoiceCapture()
+        {
+            voiceErrorMessage = null;
+            isListeningToVoice = true;
+            StateHasChanged();
+
+            await VoiceService.StartSpeechToTextAsync(
+                async (transcript) =>
+                {
+                    isListeningToVoice = false;
+                    if (!string.IsNullOrWhiteSpace(transcript))
+                    {
+                        userInput = transcript;
+                        await InvokeAsync(StateHasChanged);
+                        await InvokeAsync(SendMessage);
+                    }
+                    else
+                    {
+                        await InvokeAsync(StateHasChanged);
+                    }
+                },
+                async (error) =>
+                {
+                    isListeningToVoice = false;
+                    voiceErrorMessage = error switch
+                    {
+                        "not-allowed" => "Microphone access denied. Check your browser browser permission configuration settings.",
+                        "no-speech" => "No speech was detected. Please try tapping the button and speaking again.",
+                        "network" => "Network connection error interrupted transcription engine sync.",
+                        _ => $"Voice Service Error: {error}"
+                    };
+                    await InvokeAsync(StateHasChanged);
+                }
+            );
+        }
+
+        protected async Task StopVoiceCapture()
+        {
+            isListeningToVoice = false;
+            await VoiceService.StopSpeechToTextAsync();
+            StateHasChanged();
+        }
     }
     public class DisplayMessage
     {

@@ -6,7 +6,6 @@
             <div class="container-fluid p-0 d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center gap-2">
                     <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center shadow-sm" style="width: 32px; height: 32px;">
-                        <span class="fs-6 text-white">🤖</span>
                     </div>
                     <div class="d-flex flex-column">
                         <span class="fw-bold text-white mb-0" style="font-size: 1rem; line-height: 1.2;">Rathod AI Hub</span>
@@ -29,15 +28,14 @@
                 <div class="d-flex align-items-center gap-3">
                     <button class="btn btn-sm text-white border border-secondary rounded-pill px-3 py-1.5 shadow-none"
                             @onclick="ToggleGlobalTheme">
-                        @(IsDarkMode ? "☀️ Light Mode" : "🌙 Dark Mode")
+                        @(IsDarkMode ? "☀️" : "🌙")
                     </button>
                 </div>
-
             </div>
         </header>
         <main class="app-main-canvas">
             <div class="app-canvas-scroller">
-                <CascadingValue Value="this">
+                <CascadingValue Value="IsDarkMode">
                     @Body
                 </CascadingValue>
             </div>
@@ -46,7 +44,7 @@
 </div>
 
 @code {
-    public bool IsDarkMode { get; private set; } = false;
+    public bool IsDarkMode { get; private set; } = true;
 
     public void ToggleGlobalTheme()
     {
