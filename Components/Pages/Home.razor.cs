@@ -21,7 +21,6 @@ namespace RathodWebScraping.Components.Pages
         protected ChatSession? activeSession;
         protected string userInput = string.Empty;
         protected bool isTyping = false;
-        protected bool isDarkMode = false;
         protected bool isListeningToVoice = false;
         protected string? voiceErrorMessage = null;
         private readonly List<ChatMessage> chatHistory = new();
@@ -97,6 +96,7 @@ namespace RathodWebScraping.Components.Pages
 
             StateHasChanged();
         }
+
         protected async Task SendMessage()
         {
             if (string.IsNullOrWhiteSpace(userInput) || isTyping || activeSession == null)
@@ -172,6 +172,7 @@ namespace RathodWebScraping.Components.Pages
                 StateHasChanged();
             }
         }
+
         protected async Task StartVoiceCapture()
         {
             voiceErrorMessage = null;
@@ -196,7 +197,6 @@ namespace RathodWebScraping.Components.Pages
                 async (error) =>
                 {
                     isListeningToVoice = false;
-                    // Provide friendly explanation messages for known browser speech codes
                     voiceErrorMessage = error switch
                     {
                         "not-allowed" => "Microphone access denied. Check your browser browser permission configuration settings.",
@@ -209,16 +209,13 @@ namespace RathodWebScraping.Components.Pages
             );
         }
 
-        // Triggered manually if the user clicks the explicit red stop toggle button
         protected async Task StopVoiceCapture()
         {
             isListeningToVoice = false;
             await VoiceService.StopSpeechToTextAsync();
             StateHasChanged();
         }
-        protected void ToggleTheme() => isDarkMode = !isDarkMode;
     }
-
     public class DisplayMessage
     {
         public string Role { get; set; } = string.Empty;
