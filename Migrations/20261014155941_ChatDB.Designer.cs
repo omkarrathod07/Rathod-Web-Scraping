@@ -11,8 +11,8 @@ using RathodWebScraping.Data;
 namespace RathodWebScraping.Migrations
 {
     [DbContext(typeof(ChatDbContext))]
-    [Migration("20261008183133_InitialChatSetup2")]
-    partial class InitialChatSetup2
+    [Migration("20261014155941_ChatDB")]
+    partial class ChatDB
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -60,9 +60,13 @@ namespace RathodWebScraping.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
                     b.HasKey("Id");
 
-                    b.ToTable("Session");
+                    b.ToTable("Sessions");
                 });
 
             modelBuilder.Entity("RathodWebScraping.Data.ChatMessageRecord", b =>

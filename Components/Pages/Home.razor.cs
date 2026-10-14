@@ -126,15 +126,12 @@ namespace RathodWebScraping.Components.Pages
                 }
                 await db.SaveChangesAsync();
             }
-
             var assistantMsg = new DisplayMessage { Role = "AI", Content = "" };
             displayMessages.Add(assistantMsg);
             StateHasChanged();
-
             try
             {
                 var responseUpdates = ChatClient.GetStreamingResponseAsync(chatHistory);
-
                 await foreach (var update in responseUpdates)
                 {
                     if (!string.IsNullOrEmpty(update.Text))
@@ -144,9 +141,7 @@ namespace RathodWebScraping.Components.Pages
                         StateHasChanged();
                     }
                 }
-
                 chatHistory.Add(new ChatMessage(ChatRole.Assistant, assistantMsg.Content));
-
                 using (var db = await DbFactory.CreateDbContextAsync())
                 {
                     db.Messages.Add(new ChatMessageRecord
@@ -172,7 +167,6 @@ namespace RathodWebScraping.Components.Pages
                 StateHasChanged();
             }
         }
-
         protected async Task StartVoiceCapture()
         {
             voiceErrorMessage = null;
@@ -208,7 +202,6 @@ namespace RathodWebScraping.Components.Pages
                 }
             );
         }
-
         protected async Task StopVoiceCapture()
         {
             isListeningToVoice = false;
