@@ -1,0 +1,17 @@
+﻿version: '3.8'
+
+services:
+  omkarrathod:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: omkarrathod.com
+    restart: always
+    ports:
+      - "80:80"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - OpenAI__ApiKey=${OPENAI_API_KEY}
+      - OpenAI__GptModel=gpt-6-luna
+    volumes:
+      - /var/lib/rathod-hub/data:/app/Data
