@@ -1,8 +1,10 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.AI;
+using Microsoft.JSInterop;
 using RathodWebScraping.Data;
 using RathodWebScraping.Services;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -14,6 +16,7 @@ namespace RathodWebScraping.Components.Pages
         [Inject] private IChatClient ChatClient { get; set; } = default!;
         [Inject] private IDbContextFactory<ChatDbContext> DbFactory { get; set; } = default!;
         [Inject] private VoiceSpeechService VoiceService { get; set; } = default!;
+        [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
 
         protected List<ChatSession> sessions = new();
         protected List<DisplayMessage> displayMessages = new();
@@ -23,36 +26,68 @@ namespace RathodWebScraping.Components.Pages
         protected bool isTyping = false;
         protected bool isListeningToVoice = false;
         protected string? voiceErrorMessage = null;
+        private string currentUserTrackingId = string.Empty;
         private readonly List<ChatMessage> chatHistory = new();
-
-        protected override async Task OnInitializedAsync()
+        protected override async Task OnAfterRenderAsync(bool firstRender)
         {
-            await LoadSessionsFromDatabase();
-
-            if (sessions.Count == 0)
+            if (firstRender)
             {
-                await CreateNewSession();
-            }
-            else
-            {
-                await SwitchSession(sessions.First().Id);
+                await InitializeUserSessionContext();
             }
         }
+        private async Task InitializeUserSessionContext()
+        {
+            try
+            {
+                var storedId = await JSRuntime.InvokeAsync<string?>("localStorage.getItem", "rathod_hub_user_token");
 
+                if (string.IsNullOrWhiteSpace(storedId))
+                {
+                    storedId = Guid.NewGuid().ToString("N");
+                    await JSRuntime.InvokeVoidAsync("localStorage.setItem", "rathod_hub_user_token", storedId);
+                }
+
+                currentUserTrackingId = storedId;
+
+                await LoadSessionsFromDatabase();
+
+                if (sessions.Count == 0)
+                {
+                    await CreateNewSession();
+                }
+                else
+                {
+                    await SwitchSession(sessions.First().Id);
+                }
+            }
+            catch (Exception ex)
+            {
+                voiceErrorMessage = $"Session Routing Initialization Error: {ex.Message}";
+            }
+            finally
+            {
+                StateHasChanged();
+            }
+        }
         protected async Task LoadSessionsFromDatabase()
         {
+            if (string.IsNullOrEmpty(currentUserTrackingId)) return;
+
             using var db = await DbFactory.CreateDbContextAsync();
             sessions = await db.Sessions
+                                .Where(s => s.UserId == currentUserTrackingId)
                                 .OrderByDescending(s => s.CreatedAt)
                                 .ToListAsync();
         }
-
         protected async Task CreateNewSession()
         {
+            if (string.IsNullOrEmpty(currentUserTrackingId)) return;
+
             using var db = await DbFactory.CreateDbContextAsync();
 
             var newSession = new ChatSession
             {
+                UserId = currentUserTrackingId,
                 Title = $"Chat Section {sessions.Count + 1}"
             };
 
@@ -62,14 +97,12 @@ namespace RathodWebScraping.Components.Pages
             await LoadSessionsFromDatabase();
             await SwitchSession(newSession.Id);
         }
-
         protected async Task SwitchSession(int sessionId)
         {
             using var db = await DbFactory.CreateDbContextAsync();
-
             activeSession = await db.Sessions
                                      .Include(s => s.Messages)
-                                     .FirstOrDefaultAsync(s => s.Id == sessionId);
+                                     .FirstOrDefaultAsync(s => s.Id == sessionId && s.UserId == currentUserTrackingId);
 
             if (activeSession == null) return;
 
@@ -96,7 +129,6 @@ namespace RathodWebScraping.Components.Pages
 
             StateHasChanged();
         }
-
         protected async Task SendMessage()
         {
             if (string.IsNullOrWhiteSpace(userInput) || isTyping || activeSession == null)
@@ -118,7 +150,7 @@ namespace RathodWebScraping.Components.Pages
                     Content = userMessageText
                 });
 
-                var sessionToUpdate = await db.Sessions.FindAsync(activeSession.Id);
+                var sessionToUpdate = await db.Sessions.FirstOrDefaultAsync(s => s.Id == activeSession.Id && s.UserId == currentUserTrackingId);
                 if (sessionToUpdate != null && sessionToUpdate.Title.StartsWith("Chat Section"))
                 {
                     sessionToUpdate.Title = userMessageText.Length > 20 ? userMessageText[..20] + "..." : userMessageText;
@@ -126,12 +158,15 @@ namespace RathodWebScraping.Components.Pages
                 }
                 await db.SaveChangesAsync();
             }
+
             var assistantMsg = new DisplayMessage { Role = "AI", Content = "" };
             displayMessages.Add(assistantMsg);
             StateHasChanged();
+
             try
             {
                 var responseUpdates = ChatClient.GetStreamingResponseAsync(chatHistory);
+
                 await foreach (var update in responseUpdates)
                 {
                     if (!string.IsNullOrEmpty(update.Text))
@@ -141,7 +176,9 @@ namespace RathodWebScraping.Components.Pages
                         StateHasChanged();
                     }
                 }
+
                 chatHistory.Add(new ChatMessage(ChatRole.Assistant, assistantMsg.Content));
+
                 using (var db = await DbFactory.CreateDbContextAsync())
                 {
                     db.Messages.Add(new ChatMessageRecord
