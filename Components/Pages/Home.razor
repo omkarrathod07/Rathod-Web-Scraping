@@ -29,10 +29,17 @@
                 {
                     @foreach (var session in sessions)
                     {
-                        <button class="chat-session-btn @(session.Id == activeSession?.Id ? "active-session" : "")"
-                                @onclick="() => SwitchSession(session.Id)">
-                            💬 @session.Title
-                        </button>
+                        <div class="d-flex align-items-center justify-content-between chat-session-row @(session.Id == activeSession?.Id ? "active-session-row" : "")" style="margin-bottom: 2px; border-radius: 0.5rem; transition: background-color 0.2s;">
+                            <button class="chat-session-btn flex-grow-1" style="border: 0; background: transparent; padding: 0.6rem 0.5rem 0.6rem 1rem;"
+                                    @onclick="() => SwitchSession(session.Id)">
+                                💬 @session.Title
+                            </button>
+                            <button class="btn btn-sm text-danger border-0 px-2.5 py-2 chat-delete-btn"
+                                    title="Delete this history partition"
+                                    @onclick="() => DeleteSessionAsync(session.Id)" @onclick:stopPropagation="true">
+                                🗑️
+                            </button>
+                        </div>
                     }
                 }
             </div>

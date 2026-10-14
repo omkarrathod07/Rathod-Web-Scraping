@@ -245,6 +245,43 @@ namespace RathodWebScraping.Components.Pages
             await VoiceService.StopSpeechToTextAsync();
             StateHasChanged();
         }
+        protected async Task DeleteSessionAsync(int sessionId)
+        {
+            if (string.IsNullOrEmpty(currentUserTrackingId)) return;
+
+            using (var db = await DbFactory.CreateDbContextAsync())
+            {
+                var targetSession = await db.Sessions
+                                            .Include(s => s.Messages)
+                                            .FirstOrDefaultAsync(s => s.Id == sessionId && s.UserId == currentUserTrackingId);
+
+                if (targetSession != null)
+                {
+                    db.Messages.RemoveRange(targetSession.Messages);
+                    db.Sessions.Remove(targetSession);
+                    await db.SaveChangesAsync();
+                }
+            }
+            await LoadSessionsFromDatabase();
+            if (activeSession?.Id == sessionId)
+            {
+                if (sessions.Count == 0)
+                {
+                    activeSession = null;
+                    chatHistory.Clear();
+                    displayMessages.Clear();
+                    await CreateNewSession();
+                }
+                else
+                {
+                    await SwitchSession(sessions.First().Id);
+                }
+            }
+            else
+            {
+                StateHasChanged();
+            }
+        }
     }
     public class DisplayMessage
     {

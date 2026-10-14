@@ -292,3 +292,28 @@ html, body {
     border-bottom-left-radius: 6px;
     border-bottom-right-radius: 6px;
 }
+.chat-session-row {
+    background-color: transparent;
+}
+
+    .chat-session-row:hover {
+        background-color: var(--border-subtle);
+    }
+
+    .chat-session-row.active-session-row {
+        background-color: var(--border-color);
+    }
+
+.chat-delete-btn {
+    opacity: 0.4;
+    background: transparent !important;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.chat-session-row:hover .chat-delete-btn {
+    opacity: 0.9;
+}
+
+.chat-delete-btn:hover {
+    transform: scale(1.15);
+}
