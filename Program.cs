@@ -14,13 +14,20 @@ builder.Services.AddRazorComponents()
 string? openAIKey = builder.Configuration["OpenAI:ApiKey"];
 string? openAIModel = builder.Configuration["OpenAI:GptModel"];
 OpenAIClient openAIClient = new OpenAIClient(openAIKey);
-builder.Services.AddChatClient(new OpenAIChatClient(openAIClient,openAIModel));
+builder.Services.AddChatClient(new OpenAIChatClient(openAIClient, openAIModel));
 
 builder.Services.AddHttpClient();
 builder.Services.AddScoped<HtmlScraperService>();
 builder.Services.AddScoped<VoiceSpeechService>();
 builder.Services.AddDbContextFactory<ChatDbContext>(options => options.UseSqlite("Data Source=chats.db"));
+
 var app = builder.Build();
+using (var scope = app.Services.CreateScope())
+{
+    var dbContextFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<ChatDbContext>>();
+    using var db = dbContextFactory.CreateDbContext();
+    db.Database.Migrate();
+}
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
@@ -31,7 +38,6 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
 
 app.UseAntiforgery();
 

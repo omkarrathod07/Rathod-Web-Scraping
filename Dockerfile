@@ -1,13 +1,13 @@
-﻿FROM ://microsoft.com AS build-env
-WORKDIR /app
+﻿FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build-env
+WORKDIR /src
 COPY *.csproj ./
 RUN dotnet restore
-COPY . ./
-RUN dotnet publish -c Release -o out
+COPY . .
+RUN dotnet publish -c Release -o /app/out --no-restore
 
-FROM ://microsoft.com
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
 WORKDIR /app
 COPY --from=build-env /app/out .
-ENV ASPNETCORE_URLS=http://+:80
-EXPOSE 80
+ENV ASPNETCORE_URLS=http://+:8080
+EXPOSE 8080
 ENTRYPOINT ["dotnet", "RathodWebScraping.dll"]
