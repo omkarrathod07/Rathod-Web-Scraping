@@ -1,0 +1,158 @@
+﻿@page "/chatbot"
+@rendermode InteractiveServer
+
+@using RathodWebScraping.Components.Layout
+
+<PageTitle>AI Chatbot Assistant</PageTitle>
+
+<div class="chat-container @(GlobalIsDarkMode ? "theme-dark" : "theme-light")">
+    <div class="d-flex flex-column border-end p-2 chat-sidebar @(isMobileSidebarOpen ? "mobile-open" : "")">
+        <div class="p-2 d-flex justify-content-between align-items-center">
+            <button class="btn btn-outline-primary w-100 d-flex align-items-center justify-content-center gap-2 rounded-3 py-2 fw-semibold shadow-sm"
+                    @onclick="CreateNewSession" disabled="@(string.IsNullOrEmpty(currentUserTrackingId))">
+                <span>➕</span> New Section
+            </button>
+            <button class="btn btn-link text-muted menu-toggle-btn ms-2 fs-5 text-decoration-none" @onclick="ToggleMobileMenu">✕</button>
+        </div>
+        <div class="flex-grow-1 overflow-auto px-1 pb-3">
+            <div class="small fw-bold px-2 mb-2 text-uppercase text-muted" style="font-size: 0.7rem; letter-spacing: 0.5px;">
+                Saved Sections
+            </div>
+            <div class="d-flex flex-column gap-1">
+                @if (string.IsNullOrEmpty(currentUserTrackingId))
+                {
+                    <div class="text-center text-muted small p-3">
+                        <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                        Loading workspace...
+                    </div>
+                }
+                else
+                {
+                    @foreach (var session in sessions)
+                    {
+                        <div class="d-flex align-items-center justify-content-between chat-session-row @(session.Id == activeSession?.Id ? "active-session-row" : "")" style="margin-bottom: 2px; border-radius: 0.5rem; transition: background-color 0.2s;">
+                            <button class="chat-session-btn flex-grow-1" style="border: 0; background: transparent; padding: 0.6rem 0.5rem 0.6rem 1rem;"
+                                    @onclick="() => SelectSessionOnMobile(session.Id)">
+                                💬 @session.Title
+                            </button>
+                            <button class="btn btn-sm text-danger border-0 px-2.5 py-2 chat-delete-btn" 
+                                    title="Delete this history partition"
+                                    @onclick="() => DeleteSessionAsync(session.Id)" @onclick:stopPropagation="true">
+                                🗑️
+                            </button>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+    <div class="chat-workspace" @onclick="CloseMobileMenu">
+        <div class="d-flex align-items-center justify-content-between px-4 py-3 shadow-sm chat-header">
+            <div class="d-flex align-items-center gap-2">
+                <button class="btn btn-link text-decoration-none p-0 me-2 fs-4 menu-toggle-btn" style="color: var(--text-main);" @onclick="ToggleMobileMenu" @onclick:stopPropagation="true">
+                    ☰
+                </button>
+                <span class="fs-5">📁</span>
+                <h6 class="mb-0 fw-bold">@(activeSession?.Title ?? "Loading Chat Streams...")</h6>
+            </div>
+            <div>
+                <span class="badge bg-success bg-opacity-10 text-success border border-success-subtle rounded-pill px-3 py-1.5">
+                    ● Live
+                </span>
+            </div>
+        </div>
+        <div class="chat-history-stream">
+            <div class="mx-auto" style="max-width: 800px;">
+                @if (string.IsNullOrEmpty(currentUserTrackingId))
+                {
+                    <div class="text-center my-5 py-5">
+                        <div class="spinner-border text-primary mb-3" role="status"></div>
+                        <h5 class="text-muted">Authorizing Partition Space...</h5>
+                    </div>
+                }
+                else if (displayMessages.Count == 0)
+                {
+                    <div class="text-center my-5 py-5">
+                        <div class="display-4 text-primary mb-3">🚀</div>
+                        <h4 class="fw-bold">Section Partition Initialized</h4>
+                        <p class="mx-auto text-muted" style="max-width: 400px;">
+                            Type a message prompt below to stream responses using Microsoft Extensions AI.
+                        </p>
+                    </div>
+                }
+                else
+                {
+                    @foreach (var msg in displayMessages)
+                    {
+                        <div class="d-flex mb-4 @(msg.Role == "User" ? "justify-content-end" : "justify-content-start")">
+                            <div class="d-flex gap-3 chat-bubble-wrapper @(msg.Role == "User" ? "flex-row-reverse" : "flex-row")">
+                                <div class="chat-avatar @(msg.Role == "User" ? "user-avatar" : "ai-avatar")">
+                                    @(msg.Role == "User" ? "U" : "AI")
+                                </div>
+                                <div class="chat-bubble @(msg.Role == "User" ? "user-bubble" : "ai-bubble")">
+                                    <div class="markdown-content text-wrap fs-6">
+                                        @if (msg.Role == "AI")
+                                        {
+                                            @((MarkupString)msg.HtmlContent)
+                                        }
+                                        else
+                                        {
+                                            <p class="mb-0" style="white-space: pre-line;">@msg.Content</p>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+        <div class="chat-input-area">
+            <div class="mx-auto" style="max-width: 800px;">
+                @if (!string.IsNullOrEmpty(voiceErrorMessage))
+                {
+                    <div class="alert alert-danger alert-dismissible fade show p-2 mb-2 small rounded-3 shadow-sm d-flex justify-content-between align-items-center" role="alert">
+                        <span>⚠️ <strong>Voice Alert:</strong> @voiceErrorMessage</span>
+                        <button type="button" class="btn-close small p-2" @onclick="() => voiceErrorMessage = null" aria-label="Close"></button>
+                    </div>
+                }
+
+                <div class="input-group shadow-sm chat-input-group position-relative">
+                    <input type="text" class="form-control chat-input-field"
+                           placeholder="@(isListeningToVoice ? "Listening to your voice..." : "Type a message inside this history partition...")"
+                           @bind="userInput" @bind:event="oninput"
+                           @onkeydown="@(e => e.Key == "Enter" ? SendMessage() : Task.CompletedTask)"
+                           disabled="@(isTyping || isListeningToVoice || string.IsNullOrEmpty(currentUserTrackingId))" />
+
+                    @if (isListeningToVoice)
+                    {
+                        <button class="btn btn-danger px-3 btn-pulse animation-pulse" type="button" @onclick="StopVoiceCapture">
+                            <span class="spinner-grow spinner-grow-sm me-1" role="status" aria-hidden="true"></span> Stop
+                        </button>
+                    }
+                    else
+                    {
+                        <button class="btn btn-outline-secondary px-3" type="button" @onclick="StartVoiceCapture" disabled="@(isTyping || string.IsNullOrEmpty(currentUserTrackingId))">
+                            🎤 Speak
+                        </button>
+                    }
+
+                    <button class="btn btn-primary border-0 px-4" type="button" @onclick="SendMessage" disabled="@(isTyping || isListeningToVoice || string.IsNullOrEmpty(currentUserTrackingId))">
+                        @if (isTyping)
+                        {
+                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        }
+                        else
+                        {
+                            <span class="fw-semibold">Ask</span>
+                        }
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [CascadingParameter] public bool GlobalIsDarkMode { get; set; }
+}
