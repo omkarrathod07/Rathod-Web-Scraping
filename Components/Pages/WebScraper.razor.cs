@@ -1,12 +1,17 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.AI;
-using System.Text.RegularExpressions;
+using HtmlAgilityPack;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
+using System.Threading.Tasks;
 
 namespace RathodWebScraping.Components.Pages
 {
     public partial class WebScraper
     {
-        private string targetUrl = "https://ygminds.com/";
+        private string targetUrl = "https://ygminds.com";
 
         private string extractedData = "";
         private MarkupString ExtractedDataMarkup => new MarkupString(extractedData);
@@ -23,122 +28,100 @@ namespace RathodWebScraping.Components.Pages
         private bool isImageURL1 = false;
         private bool isImageURL2 = false;
         private List<string> imageUrls = new List<string>();
+
         protected async Task ServiceScrapeAndProcess()
         {
             if (string.IsNullOrEmpty(targetUrl))
             {
-                statusScrape = "Please enter a URL to scrape.";
-                extractedData = "";
-                responseMessage = "";
-                statusAI = "";
-                imageUrls.Clear();
-                imageUrl = null;
-                isImageURL1 = false;
-                isImageURL2 = false;
-
+                ResetState("Please enter a URL to scrape.");
                 return;
             }
-            else if (!Uri.IsWellFormedUriString(targetUrl, UriKind.Absolute))
+
+            if (!Uri.IsWellFormedUriString(targetUrl, UriKind.Absolute))
             {
-                statusScrape = "Not a valid URL.";
-                extractedData = "";
-                responseMessage = "";
-                statusAI = "";
-                imageUrls.Clear();
-                imageUrl = null;
-                isImageURL1 = false;
-                isImageURL2 = false;
+                ResetState("Not a valid URL.");
                 return;
             }
-            else
+
+            isLoading = true;
+            responseMessage = "";
+            imageUrls.Clear();
+            imageUrl = null;
+            isImageURL1 = false;
+            isImageURL2 = false;
+            statusAI = "";
+            statusScrape = "Processing...";
+
+            try
             {
-                isLoading = true;
+                var scraperResponse = await HtmlScraperService.LoadHtmlFromUrlAsync(targetUrl);
+                extractedData = scraperResponse.CleanText;
+                imageUrls = ExtractImageUrlsFromHtml(scraperResponse.RawHtml);
+                imageUrl = imageUrls.FirstOrDefault();
 
-                responseMessage = "";
-
-                imageUrls.Clear();
-                imageUrl = null;
-                isImageURL1 = false;
-                isImageURL2 = false;
-
-                statusAI = "";
-                statusScrape = "Processing...";
-                try
-                {
-                    var ScraperResponse = await HtmlScraperService.LoadHtmlFromUrlAsync(targetUrl);
-                    extractedData = ScraperResponse.ParsedText;
-                    imageUrls = ExtractImageUrls(ScraperResponse.ParsedText);
-
-                    foreach (var url in imageUrls)
-                    {
-                        extractedData += "<br/><img src='" + url + "' width='100' height='100' />";
-                    }
-
-                    imageUrl = imageUrls.FirstOrDefault();
-
-                    statusScrape = "Done";
-                }
-                catch (Exception ex)
-                {
-                    statusScrape = "An error occurred while scraping the URL...." + ex.Message;
-                    extractedData = "";
-                    responseMessage = "";
-                    statusAI = "";
-                    imageUrls.Clear();
-                    imageUrl = null;
-                    isImageURL1 = false;
-                    isImageURL2 = false;
-                }
-                finally
-                {
-                    isLoading = false;
-                    StateHasChanged();
-                }
-
+                statusScrape = "Done";
+            }
+            catch (Exception ex)
+            {
+                ResetState($"An error occurred while scraping the URL: {ex.Message}");
+            }
+            finally
+            {
+                isLoading = false;
+                StateHasChanged();
             }
         }
 
-        private List<string> ExtractImageUrls(string htmlContent)
+        private List<string> ExtractImageUrlsFromHtml(string htmlContent)
         {
-
             var urls = new List<string>();
-            var regex = new Regex("<img[^>]+?src=[\"'](?<url>.*?)[\"']", RegexOptions.IgnoreCase);
-            var matches = regex.Matches(htmlContent);
-            foreach (Match match in matches)
+            var doc = new HtmlDocument();
+            doc.LoadHtml(htmlContent);
+
+            var imgNodes = doc.DocumentNode.SelectNodes("//img[@src]");
+            if (imgNodes != null)
             {
-                urls.Add(match.Groups["url"].Value);
+                foreach (var node in imgNodes)
+                {
+                    string src = node.GetAttributeValue("src", "").Trim();
+                    if (!string.IsNullOrEmpty(src))
+                    {
+                        if (Uri.IsWellFormedUriString(src, UriKind.Relative) && Uri.TryCreate(new Uri(targetUrl), src, out var absoluteUri))
+                        {
+                            urls.Add(absoluteUri.ToString());
+                        }
+                        else if (Uri.IsWellFormedUriString(src, UriKind.Absolute))
+                        {
+                            urls.Add(src);
+                        }
+                    }
+                }
             }
-            return urls;
+            return urls.Distinct().ToList();
         }
-        private async Task ProcessUrLImage(string imageUrl, int type)
+
+        private async Task ProcessUrLImage(string targetImageUrl, int type)
         {
             isImageURL1 = false;
             isImageURL2 = false;
-
             imageBase64 = null;
-
             isLoading = true;
 
-            if (targetUrl == null || targetUrl == "")
+            if (string.IsNullOrEmpty(targetUrl))
             {
-                statusScrape = "Please enter a URL to scrape first";
-                isLoading = false;
-                responseMessage = "";
-                extractedData = "";
-                statusAI = "";
-                imageUrls.Clear();
-                imageUrl = null;
-
-                return;
-            }
-
-            if (imageUrl == null)
-            {
-                responseMessage = "Need a valid Image URL ...Try Scraping first";
+                ResetState("Please enter a URL to scrape first");
                 isLoading = false;
                 return;
             }
-            if (!Uri.IsWellFormedUriString(imageUrl, UriKind.Absolute))
+
+            if (string.IsNullOrEmpty(targetImageUrl))
+            {
+                responseMessage = "Need a valid Image URL... Try Scraping first";
+                isLoading = false;
+                return;
+            }
+
+            if (!Uri.IsWellFormedUriString(targetImageUrl, UriKind.Absolute))
             {
                 responseMessage = "Not a valid Image URL.";
                 isLoading = false;
@@ -152,51 +135,52 @@ namespace RathodWebScraping.Components.Pages
             else if (type == 2)
             {
                 isImageURL2 = true;
-                newImageURL = imageUrl;
+                newImageURL = targetImageUrl;
             }
 
             statusAI = "Processing...";
             responseMessage = null;
 
-            var message = new ChatMessage(ChatRole.User, "What's in this image");
-            var httpClient = new HttpClient();
+            try
+            {
+                var message = new ChatMessage(ChatRole.User, "What's in this image");
+                using var httpClient = new HttpClient();
+                var imageBytes = await httpClient.GetByteArrayAsync(targetImageUrl);
+                imageFileSize = imageBytes.Length;
+                message.Contents.Add(new DataContent(new BinaryData(imageBytes), "image/jpeg"));
 
-            var imageBytes = await httpClient.GetByteArrayAsync(imageUrl);
-            var base64Image = Convert.ToBase64String(imageBytes);
-            var imageData = $"data:image/jpg;base64,{base64Image}";
-            imageFileSize = imageBytes.Length;
-
-            message.Contents.Add(new DataContent(imageData, "image/jpg"));
-            var response1 = await ChatClient.GetResponseAsync(message);
-
-            responseMessage = response1.Text;
-
-            statusAI = "Done";
-            isLoading = false;
-
+                var response1 = await ChatClient.GetResponseAsync(message);
+                responseMessage = response1.Text;
+                statusAI = "Done";
+            }
+            catch (Exception ex)
+            {
+                responseMessage = $"Vision process exception: {ex.Message}";
+                statusAI = "Error";
+            }
+            finally
+            {
+                isLoading = false;
+                StateHasChanged();
+            }
         }
+
         private async Task ScrapeAndProcessMSextensions()
         {
-            if (targetUrl == null || targetUrl == "")
+            if (string.IsNullOrEmpty(targetUrl))
             {
-                responseMessage = "Please enter a URL to scrape first";
+                ResetState("Please enter a URL to scrape first");
                 isLoading = false;
-                extractedData = "";
-                statusAI = "";
-                statusScrape = "";
-                imageUrls.Clear();
-                imageUrl = null;
                 return;
             }
 
             if (!string.IsNullOrEmpty(extractedData))
             {
                 await OpenAIResponse();
-
             }
             else
             {
-                responseMessage = "Please Scrape the URL first ";
+                responseMessage = "Please Scrape the URL first";
             }
         }
 
@@ -208,14 +192,13 @@ namespace RathodWebScraping.Components.Pages
             responseMessage = "";
             statusAI = "Processing...";
 
-
-
-            var message = new ChatMessage(ChatRole.User, "Give me an overall idea what this site is about nicely format your response in HTML " + extractedData);
+            var message = new ChatMessage(ChatRole.User, "Give me an overall idea what this site is about based on this text. Nicely format your response using standard HTML blocks: " + extractedData);
 
             try
             {
                 var response1 = await ChatClient.GetResponseAsync(message);
                 responseMessage = response1.Text;
+                statusAI = "Done";
             }
             catch (Exception ex)
             {
@@ -225,9 +208,20 @@ namespace RathodWebScraping.Components.Pages
             finally
             {
                 isLoading = false;
-                statusAI = "Done";
                 StateHasChanged();
             }
+        }
+
+        private void ResetState(string scrapeStatusMessage)
+        {
+            statusScrape = scrapeStatusMessage;
+            extractedData = "";
+            responseMessage = "";
+            statusAI = "";
+            imageUrls.Clear();
+            imageUrl = null;
+            isImageURL1 = false;
+            isImageURL2 = false;
         }
     }
 }

@@ -3,21 +3,6 @@
     --transition-easing: cubic-bezier(0.4, 0, 0.2, 1);
 }
 .theme-light {
-    --bg-app: #fcfcfd;
-    --bg-sidebar: #f8f9fa;
-    --bg-card: #ffffff;
-    --bg-input: #fafafa;
-    --bg-terminal: #212529;
-    --border-color: #dee2e6;
-    --border-subtle: #e9ecef;
-    --text-main: #212529;
-    --text-muted: #6c757d;
-    --text-terminal: #f8f9fa;
-    --chat-bubble-ai: #ffffff;
-    --chat-bubble-user: #0d6efd;
-    --chat-avatar-ai: #ffffff;
-}
-.theme-dark {
     --bg-app: #121214;
     --bg-sidebar: #1a1a1e;
     --bg-card: #1e1e24;
@@ -31,6 +16,21 @@
     --chat-bubble-ai: #1a1a1e;
     --chat-bubble-user: #0d6efd;
     --chat-avatar-ai: #2d2d34;
+}
+.theme-dark {
+    --bg-app: #fcfcfd;
+    --bg-sidebar: #f8f9fa;
+    --bg-card: #ffffff;
+    --bg-input: #fafafa;
+    --bg-terminal: #212529;
+    --border-color: #dee2e6;
+    --border-subtle: #e9ecef;
+    --text-main: #212529;
+    --text-muted: #6c757d;
+    --text-terminal: #f8f9fa;
+    --chat-bubble-ai: #ffffff;
+    --chat-bubble-user: #0d6efd;
+    --chat-avatar-ai: #ffffff;
 }
 .app-theme-container {
     background-color: var(--bg-app) !important;
@@ -103,8 +103,8 @@ html, body {
     height: 100%;
     width: 100%;
     overflow: hidden;
+    position: relative;
 }
-
 .chat-sidebar {
     width: 260px;
     min-width: 260px;
@@ -112,9 +112,33 @@ html, body {
     border-right: 1px solid var(--border-color) !important;
     display: flex;
     flex-direction: column;
-    transition: background-color var(--transition-speed) var(--transition-easing);
+    z-index: 1040;
+    transition: transform var(--transition-speed) var(--transition-easing), background-color var(--transition-speed) var(--transition-easing);
 }
+.menu-toggle-btn {
+    display: none;
+}
+@media (max-width: 768px) {
+    .menu-toggle-btn {
+        display: inline-block;
+    }
 
+    .chat-sidebar {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        box-shadow: 4px 0 15px rgba(0,0,0,0.1);
+        transform: translateX(-100%);
+    }
+        .chat-sidebar.mobile-open {
+            transform: translateX(0);
+        }
+
+    .chat-bubble-wrapper {
+        max-width: 90%;
+    }
+}
 .chat-session-btn {
     width: 100%;
     border: 0;
