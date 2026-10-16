@@ -6,8 +6,6 @@ using RathodWebScraping.Data;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
-//builder.Configuration.AddJsonFile("apisetting", optional: false, reloadOnChange: true);
-// Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
@@ -17,6 +15,7 @@ OpenAIClient openAIClient = new OpenAIClient(openAIKey);
 builder.Services.AddChatClient(new OpenAIChatClient(openAIClient, openAIModel));
 
 builder.Services.AddHttpClient();
+builder.Services.AddScoped<ThemeState>();
 builder.Services.AddScoped<HtmlScraperService>();
 builder.Services.AddScoped<VoiceSpeechService>();
 builder.Services.AddDbContextFactory<ChatDbContext>(options => options.UseSqlite("Data Source=chats.db"));

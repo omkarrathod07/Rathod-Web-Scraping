@@ -1,54 +1,70 @@
 ﻿@inherits LayoutComponentBase
+@inject RathodWebScraping.Services.ThemeState ThemeState
+@implements IDisposable
 
-<div class="app-theme-container @(IsDarkMode ? "theme-dark" : "theme-light")">
+<div class="app-theme-container @(ThemeState.IsDarkMode ? "theme-dark" : "theme-light")">
     <div class="app-shell">
-        <header class="navbar navbar-expand navbar-dark bg-dark px-4 shadow-sm app-navbar">
+        <header class="navbar navbar-expand navbar-dark px-4 shadow-sm app-navbar">
             <div class="container-fluid p-0 d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center gap-2">
-                    <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center shadow-sm" style="width: 32px; height: 32px;">
-                    </div>
+                    <img src="images/logo.jpg"
+                         alt="Rathod AI Platform Logo"
+                         class="rounded-circle shadow-sm border"
+                         style="width: 32px; height: 32px; object-fit: cover; border-color: var(--border-subtle) !important;" />
+
                     <div class="d-flex flex-column">
-                        <span class="fw-bold text-white mb-0" style="font-size: 1rem; line-height: 1.2;">Rathod AI Hub</span>
+                        <span class="fw-bold text-white mb-0" style="font-size: 1rem; line-height: 1.2;">Rathod Hub</span>
                         <small class="text-muted" style="font-size: 0.65rem; font-weight: 500; letter-spacing: 0.3px;">.NET 9 CORE PLATFORM</small>
                     </div>
                 </div>
                 <nav class="navbar-nav d-flex flex-row gap-2">
                     <NavLink class="nav-link d-flex align-items-center gap-2 px-3 py-2 rounded-3 border-0 text-decoration-none"
-                             href="chatbot" Match="NavLinkMatch.All" ActiveClass="active-nav">
-                        <span class="fs-5">💬</span>
-                        <span class="fw-medium">AI Chat Assistant</span>
+                             href="" Match="NavLinkMatch.All" ActiveClass="active-nav">
+                        <span class="fw-medium text-inherit">Home</span>
                     </NavLink>
-
+                    <NavLink class="nav-link d-flex align-items-center gap-2 px-3 py-2 rounded-3 border-0 text-decoration-none"
+                             href="chatbot" ActiveClass="active-nav">
+                        <span class="fs-5">💬</span>
+                        <span class="fw-medium text-inherit">AI Chat Assistant</span>
+                    </NavLink>
                     <NavLink class="nav-link d-flex align-items-center gap-2 px-3 py-2 rounded-3 border-0 text-decoration-none"
                              href="webscraper" ActiveClass="active-nav">
                         <span class="fs-5">🌐</span>
-                        <span class="fw-medium">Web Scraper View</span>
+                        <span class="fw-medium text-inherit">Web Scraper View</span>
                     </NavLink>
                 </nav>
                 <div class="d-flex align-items-center gap-3">
                     <button class="btn btn-sm text-white border border-secondary rounded-pill px-3 py-1.5 shadow-none"
                             @onclick="ToggleGlobalTheme">
-                        @(IsDarkMode ? "☀️" : "🌙")
+                        @(ThemeState.IsDarkMode ? "☀️" : "🌙")
                     </button>
                 </div>
             </div>
         </header>
         <main class="app-main-canvas">
             <div class="app-canvas-scroller">
-                <CascadingValue Value="IsDarkMode">
+                <CascadingValue Name="IsDarkMode" Value="ThemeState.IsDarkMode">
                     @Body
                 </CascadingValue>
             </div>
         </main>
+
     </div>
 </div>
 
 @code {
-    public bool IsDarkMode { get; private set; } = true;
+    protected override void OnInitialized()
+    {
+        ThemeState.OnChange += StateHasChanged;
+    }
 
     public void ToggleGlobalTheme()
     {
-        IsDarkMode = !IsDarkMode;
-        StateHasChanged();
+        ThemeState.IsDarkMode = !ThemeState.IsDarkMode;
+    }
+
+    public void Dispose()
+    {
+        ThemeState.OnChange -= StateHasChanged;
     }
 }

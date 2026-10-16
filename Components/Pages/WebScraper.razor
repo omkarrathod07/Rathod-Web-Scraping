@@ -9,6 +9,8 @@
 
 @using RathodWebScraping.Services
 @inject HtmlScraperService HtmlScraperService
+@inject RathodWebScraping.Services.ThemeState ThemeState
+@implements IDisposable
 
 @using Microsoft.Extensions.AI;
 @inject IChatClient ChatClient
@@ -16,105 +18,148 @@
 @using System.Text.RegularExpressions
 
 <PageTitle>Web Scraper Analytics Console</PageTitle>
-<div class="w-100 h-100 py-4 @(GlobalIsDarkMode ? "theme-dark" : "theme-light")" style="background-color: var(--bg-app); min-height: 100vh; transition: background-color var(--transition-speed) var(--transition-easing);">
-    <div class="container" style="max-width: 900px;">
-        <h1 class="text-center mb-2 fw-bold text-primary">Rathod Web Scraping</h1>
-        <h5 class="text-center text-muted mb-4">Generate Insights via Unified Multimodal Pipelines</h5>
 
-        <div class="card shadow-sm p-4 mb-4 scraper-panel-card">
-            <div class="form-group mb-3">
-                <label class="form-label fw-semibold">Target Web Address Destination URL:</label>
-                <textarea @bind="targetUrl" class="form-control scraper-input-field" rows="2" placeholder="Enter full URL path (e.g., https://ygminds.com)"></textarea>
-            </div>
+<div class="w-100 d-flex flex-column @(ThemeState.IsDarkMode ? "theme-dark" : "theme-light")" style="height: calc(100vh - 60px); max-height: calc(100vh - 60px); overflow: hidden;">
+    <div class="container-fluid px-4 py-3 d-flex flex-column h-100" style="max-width: 1600px;">
 
-            <div class="d-flex flex-wrap justify-content-center gap-2">
-                <button @onclick="ServiceScrapeAndProcess" class="btn btn-primary px-3 py-2 fw-semibold" disabled="@isLoading">
-                    🌐 Web Scrape URL
-                </button>
-                <button @onclick="@(() => ProcessUrLImage(imageUrl!, 1))" class="btn btn-outline-secondary px-3 py-2 fw-semibold" disabled="@(isLoading || string.IsNullOrEmpty(imageUrl))">
-                    🖼️ Analyze First Image
-                </button>
-                <button @onclick="ScrapeAndProcessMSextensions" class="btn btn-success px-3 py-2 fw-semibold" disabled="@(isLoading || string.IsNullOrEmpty(extractedData))">
-                    🧠 Generate Site Insight
-                </button>
-            </div>
-
-            @if (isLoading || statusAI == "Processing...")
-            {
-                <div class="text-center mt-3 p-2 bg-opacity-10 bg-secondary rounded d-flex align-items-center justify-content-center gap-2">
-                    <span class="spinner-border spinner-border-sm text-primary" role="status" aria-hidden="true"></span>
-                    <span class="text-muted fw-medium">Executing system requests: @statusScrape @statusAI...</span>
-                </div>
-            }
+        <div class="text-center mb-3 flex-shrink-0">
+            <h2 class="fw-bold text-primary mb-0 fs-3">Rathod Web Scraping</h2>
+            <small class="text-muted text-uppercase tracking-wider">Unified Multimodal Scraping & AI Analytics Dashboard</small>
         </div>
 
-        @if ((isImageURL1 && !string.IsNullOrEmpty(imageUrl)) || (isImageURL2 && !string.IsNullOrEmpty(newImageURL)))
-        {
-            <div class="card shadow-sm text-center p-4 mb-4 scraper-panel-card">
-                <h6 class="fw-bold mb-3 text-secondary">Active Vision Pipeline Target Target Element Image</h6>
-                <img src="@(isImageURL1 ? imageUrl : newImageURL)" alt="Target Media Canvas" class="img-fluid rounded shadow border mx-auto" style="max-width: 100%; max-height: 280px; object-fit: contain;" />
-                <div class="mt-3 small text-muted">
-                    <strong>Image Weight:</strong> <span class="badge bg-dark">@imageFileSize bytes</span>
-                </div>
-            </div>
-        }
+        <div class="row g-3 flex-grow-1 overflow-hidden min-vh-0">
 
-        @if (imageUrls != null && imageUrls.Count > 0)
-        {
-            <div class="card shadow-sm p-3 mb-4 scraper-panel-card">
-                <div class="fw-bold text-muted small text-uppercase mb-2" style="letter-spacing: 0.5px;">
-                    📸 Extracted Media Matrix Asset Links
-                </div>
-                <div class="d-flex flex-wrap gap-2 p-2 image-gallery-container">
-                    @foreach (var img in imageUrls)
-                    {
-                        if (!string.IsNullOrEmpty(img))
-                        {
-                            <div @onclick="@(() => ProcessUrLImage(img, 2))" class="image-gallery-thumb">
-                                <img src="@img" style="width: 100%; height: 100%; object-fit: cover;" alt="Matrix payload reference thumb" />
+            <div class="col-12 col-lg-5 col-xl-4 d-flex flex-column gap-3 h-100 overflow-y-auto pe-lg-2" style="max-height: 100%;">
+
+                <div class="card shadow-sm p-3 scraper-panel-card border-0 flex-shrink-0">
+                    <div class="form-group mb-3">
+                        <label class="form-label fw-bold text-secondary small text-uppercase mb-1">Target Web Address Destination URL</label>
+                        <textarea @bind="targetUrl" class="form-control scraper-input-field font-monospace small" rows="2" placeholder="Enter full URL path (e.g., https://ygminds.com)"></textarea>
+                    </div>
+
+                    <div class="d-flex flex-column gap-2">
+                        <button @onclick="ServiceScrapeAndProcess" class="btn btn-primary btn-sm py-2 fw-semibold d-flex align-items-center justify-content-center gap-2" disabled="@isLoading">
+                            <span>🌐</span> Web Scrape URL
+                        </button>
+
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <button @onclick="@(() => ProcessUrLImage(imageUrl!, 1))" class="btn btn-outline-secondary w-100 py-1.5 fw-semibold small text-nowrap" disabled="@(isLoading || string.IsNullOrEmpty(imageUrl))">
+                                    🖼️ Analyze First
+                                </button>
                             </div>
-                        }
+                            <div class="col-6">
+                                <button @onclick="ScrapeAndProcessMSextensions" class="btn btn-success w-100 py-1.5 fw-semibold small text-nowrap" disabled="@(isLoading || string.IsNullOrEmpty(extractedData))">
+                                    🧠 Site Insight
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (isLoading || statusAI == "Processing...")
+                    {
+                        <div class="text-center mt-2 p-2 bg-secondary bg-opacity-10 rounded border border-secondary border-opacity-20 d-flex align-items-center justify-content-center gap-2">
+                            <span class="spinner-border spinner-border-sm text-primary" role="status" aria-hidden="true"></span>
+                            <span class="text-muted small fw-medium text-xxs">Executing Pipeline: @statusScrape @statusAI</span>
+                        </div>
                     }
                 </div>
-            </div>
-        }
 
-        <div class="card shadow-sm mb-4 border-0 scraper-panel-card overflow-hidden" style="border-left: 4px solid #0dcaf0 !important;">
-            <div class="p-3 bg-info bg-opacity-10 fw-bold d-flex justify-content-between align-items-center" style="color: var(--text-main);">
-                <span>🧠 Deep Intelligent Analytics Summary Breakdown</span>
-                <span class="badge bg-info text-white text-uppercase">@statusAI</span>
+                @if ((isImageURL1 && !string.IsNullOrEmpty(imageUrl)) || (isImageURL2 && !string.IsNullOrEmpty(newImageURL)))
+                {
+                    <div class="card shadow-sm p-3 scraper-panel-card border-0 flex-shrink-0">
+                        <div class="fw-bold text-secondary small text-uppercase mb-2 border-bottom pb-1 d-flex justify-content-between align-items-center">
+                            <span class="small">👁️ Vision Target Pipeline</span>
+                            <span class="badge bg-dark font-monospace text-xxs">@imageFileSize bytes</span>
+                        </div>
+                        <div class="d-flex bg-black bg-opacity-10 rounded p-2 justify-content-center align-items-center" style="min-height: 140px;">
+                            <img src="@(isImageURL1 ? imageUrl : newImageURL)" alt="Target Media Canvas" class="img-fluid rounded shadow-sm border border-secondary border-opacity-20" style="max-width: 100%; max-height: 150px; object-fit: contain;" />
+                        </div>
+                    </div>
+                }
+
+                @if (imageUrls != null && imageUrls.Count > 0)
+                {
+                    <div class="card shadow-sm p-3 scraper-panel-card border-0 flex-grow-1 min-vh-0 d-flex flex-column">
+                        <div class="fw-bold text-secondary small text-uppercase mb-2 flex-shrink-0" style="letter-spacing: 0.5px;">
+                            📸 Media Matrix Assets (@imageUrls.Count)
+                        </div>
+                        <div class="image-gallery-container p-2 flex-grow-1 overflow-y-auto" style="background-color: rgba(0,0,0,0.05); border-radius: 6px;">
+                            <div class="row g-2 row-cols-3 row-cols-sm-4 row-cols-md-4 row-cols-lg-3 row-cols-xl-4">
+                                @foreach (var img in imageUrls)
+                                {
+                                    if (!string.IsNullOrEmpty(img))
+                                    {
+                                        <div class="col">
+                                            <div @onclick="@(() => ProcessUrLImage(img, 2))" class="image-gallery-thumb w-100 ratio ratio-1x1 border rounded overflow-hidden position-relative shadow-2xs">
+                                                <img src="@img" class="position-absolute w-100 h-100 top-0 start-0" style="object-fit: cover;" alt="Payload thumb" />
+                                            </div>
+                                        </div>
+                                    }
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
             </div>
-            <div class="card-body" style="min-height: 80px;">
-                @if (!string.IsNullOrEmpty(responseMessage))
-                {
-                    <div class="text-wrap">@((MarkupString)responseMessage)</div>
-                }
-                else
-                {
-                    <span class="text-muted italic small">No active content analytics generated. Submit an execution request above to render details.</span>
-                }
+
+            <div class="col-12 col-lg-7 col-xl-8 d-flex flex-column gap-3 h-100 overflow-hidden">
+
+                <div class="card shadow-sm border-0 scraper-panel-card overflow-hidden d-flex flex-column" style="border-left: 5px solid #0dcaf0 !important; flex: 3; min-height: 0;">
+                    <div class="p-2.5 px-3 bg-info bg-opacity-10 fw-bold d-flex justify-content-between align-items-center border-bottom border-info border-opacity-10 flex-shrink-0" style="color: var(--text-main);">
+                        <span class="d-flex align-items-center gap-2 small">🧠 Deep Intelligent Analytics Summary Breakdown</span>
+                        <span class="badge bg-info text-white text-uppercase tracking-wider px-2 py-0.5 text-xxs">@statusAI</span>
+                    </div>
+                    <div class="card-body bg-card p-3 overflow-y-auto flex-grow-1">
+                        @if (!string.IsNullOrEmpty(responseMessage))
+                        {
+                            <div class="text-wrap lh-base style-output-html small">@((MarkupString)responseMessage)</div>
+                        }
+                        else
+                        {
+                            <div class="h-100 d-flex flex-column justify-content-center align-items-center text-center p-4 text-muted">
+                                <span class="fs-3 mb-1">💡</span>
+                                <span class="italic small text-xxs">No active content analytics generated yet. Submit a URL or image processing execution request above to render details.</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div class="card shadow-sm border-0 scraper-panel-card overflow-hidden d-flex flex-column" style="border-left: 5px solid #6c757d !important; flex: 2; min-height: 0;">
+                    <div class="p-2.5 px-3 bg-secondary bg-opacity-10 fw-bold d-flex justify-content-between align-items-center border-bottom border-secondary border-opacity-10 flex-shrink-0" style="color: var(--text-main);">
+                        <span class="d-flex align-items-center gap-2 small">📋 Raw Webpage Text Extraction Log Streams</span>
+                        <span class="badge bg-secondary text-white text-uppercase tracking-wider px-2 py-0.5 text-xxs">@statusScrape</span>
+                    </div>
+                    <div class="card-body p-0 m-0 d-flex flex-column flex-grow-1 overflow-hidden">
+                        @if (!string.IsNullOrEmpty(extractedData))
+                        {
+                            <div class="terminal-log-view p-3 m-0 w-100 h-100 overflow-y-auto flex-grow-1" style="line-height: 1.4;">
+                                @ExtractedDataMarkup
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="p-4 text-center text-muted italic small my-auto text-xxs">
+                                The extraction pipeline log stream is currently blank. Submit a valid URL destination link profile block above.
+                            </div>
+                        }
+                    </div>
+                </div>
+
             </div>
         </div>
 
-        <div class="card shadow-sm mb-4 border-0 scraper-panel-card overflow-hidden" style="border-left: 4px solid #6c757d !important;">
-            <div class="p-3 bg-secondary bg-opacity-10 fw-bold d-flex justify-content-between align-items-center" style="color: var(--text-main);">
-                <span>📋 Raw Webpage Text Extraction Log Streams</span>
-                <span class="badge bg-secondary text-white text-uppercase">@statusScrape</span>
-            </div>
-            <div class="card-body p-3 terminal-log-view">
-                @if (!string.IsNullOrEmpty(extractedData))
-                {
-                    <div>@ExtractedDataMarkup</div>
-                }
-                else
-                {
-                    <span class="text-muted italic">The extraction pipeline log stream is currently blank. Submit a valid URL destination link profile block above.</span>
-                }
-            </div>
-        </div>
     </div>
 </div>
 
 @code {
-    [CascadingParameter] public bool GlobalIsDarkMode { get; set; }
+    protected override void OnInitialized()
+    {
+        ThemeState.OnChange += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        ThemeState.OnChange -= StateHasChanged;
+    }
 }
