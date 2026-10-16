@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.AI;
 using HtmlAgilityPack;
+using RathodWebScraping.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,6 +12,9 @@ namespace RathodWebScraping.Components.Pages
 {
     public partial class WebScraper
     {
+        [CascadingParameter(Name = "IsDarkMode")]
+        public bool GlobalIsDarkMode { get; set; }
+
         private string targetUrl = "https://ygminds.com";
 
         private string extractedData = "";

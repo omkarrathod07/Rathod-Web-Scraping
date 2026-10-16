@@ -1,0 +1,97 @@
+.scraper-panel-card {
+    background-color: var(--bg-card) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 0.5rem;
+    color: var(--text-main);
+    transition: background-color var(--transition-speed) var(--transition-easing);
+}
+
+.scraper-input-field {
+    background-color: var(--bg-input) !important;
+    color: var(--text-main) !important;
+    border: 1px solid var(--border-color) !important;
+}
+
+.image-gallery-container {
+    max-height: 280px;
+    overflow-y: auto;
+}
+
+.image-gallery-thumb {
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+    .image-gallery-thumb:hover {
+        transform: scale(1.05);
+    }
+
+.terminal-log-view {
+    font-family: monospace;
+    background-color: var(--bg-terminal) !important;
+    color: var(--text-terminal) !important;
+}
+
+::deep .style-output-html h1,
+::deep .style-output-html h2,
+::deep .style-output-html h3 {
+    color: var(--text-main);
+    font-weight: 600;
+    margin-top: 0.75rem;
+    margin-bottom: 0.4rem;
+    font-size: 1.15rem;
+}
+
+::deep .style-output-html p {
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+}
+
+.tracking-wider {
+    letter-spacing: 0.075rem;
+}
+
+.text-xxs {
+    font-size: 0.65rem;
+}
+
+.overflow-y-auto::-webkit-scrollbar {
+    width: 6px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb {
+    background-color: rgba(0,0,0,0.15);
+    border-radius: 10px;
+}
+
+.theme-dark .overflow-y-auto::-webkit-scrollbar-thumb {
+    background-color: rgba(255,255,255,0.15);
+}
+.scraper-panel-card .btn-primary,
+.scraper-panel-card .btn-success {
+    background-color: var(--chat-bubble-user) !important;
+    border-color: var(--chat-bubble-user) !important;
+    color: #ffffff !important;
+    transition: background-color var(--transition-speed) ease, box-shadow var(--transition-speed) ease;
+}
+
+.scraper-panel-card .btn-primary:hover:not([disabled]),
+.scraper-panel-card .btn-success:hover:not([disabled]) {
+    filter: brightness(1.15);
+    box-shadow: 0 0 14px var(--chat-bubble-user);
+}
+
+.scraper-panel-card .btn-outline-secondary {
+    border-color: var(--border-color) !important;
+    color: var(--text-muted) !important;
+}
+
+.scraper-panel-card .btn-outline-secondary:hover:not([disabled]) {
+    background-color: rgba(255, 42, 75, 0.05) !important;
+    color: var(--text-main) !important;
+    border-color: var(--chat-bubble-user) !important;
+}

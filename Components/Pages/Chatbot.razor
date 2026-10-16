@@ -2,10 +2,12 @@
 @rendermode InteractiveServer
 
 @using RathodWebScraping.Components.Layout
+@inject RathodWebScraping.Services.ThemeState ThemeState
+@implements IDisposable
 
-<PageTitle>AI Chatbot Assistant</PageTitle>
+<PageTitle>AI Assistant</PageTitle>
 
-<div class="chat-container @(GlobalIsDarkMode ? "theme-dark" : "theme-light")">
+<div class="chat-container @(ThemeState.IsDarkMode ? "theme-dark" : "theme-light")">
     <div class="d-flex flex-column border-end p-2 chat-sidebar @(isMobileSidebarOpen ? "mobile-open" : "")">
         <div class="p-2 d-flex justify-content-between align-items-center">
             <button class="btn btn-outline-primary w-100 d-flex align-items-center justify-content-center gap-2 rounded-3 py-2 fw-semibold shadow-sm"
@@ -35,7 +37,7 @@
                                     @onclick="() => SelectSessionOnMobile(session.Id)">
                                 💬 @session.Title
                             </button>
-                            <button class="btn btn-sm text-danger border-0 px-2.5 py-2 chat-delete-btn" 
+                            <button class="btn btn-sm text-danger border-0 px-2.5 py-2 chat-delete-btn"
                                     title="Delete this history partition"
                                     @onclick="() => DeleteSessionAsync(session.Id)" @onclick:stopPropagation="true">
                                 🗑️
@@ -87,7 +89,17 @@
                         <div class="d-flex mb-4 @(msg.Role == "User" ? "justify-content-end" : "justify-content-start")">
                             <div class="d-flex gap-3 chat-bubble-wrapper @(msg.Role == "User" ? "flex-row-reverse" : "flex-row")">
                                 <div class="chat-avatar @(msg.Role == "User" ? "user-avatar" : "ai-avatar")">
-                                    @(msg.Role == "User" ? "U" : "AI")
+                                    @if (msg.Role == "User")
+                                    {
+                                        <div class="chat-avatar user-avatar">U</div>
+                                    }
+                                    else
+                                    {
+                                        <img src="images/logo.jpg"
+                                             alt="AI Platform Logo"
+                                             class="chat-avatar border"
+                                             style="object-fit: cover; border-color: var(--border-subtle) !important;" />
+                                    }
                                 </div>
                                 <div class="chat-bubble @(msg.Role == "User" ? "user-bubble" : "ai-bubble")">
                                     <div class="markdown-content text-wrap fs-6">
@@ -154,5 +166,13 @@
 </div>
 
 @code {
-    [CascadingParameter] public bool GlobalIsDarkMode { get; set; }
+    protected override void OnInitialized()
+    {
+        ThemeState.OnChange += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        ThemeState.OnChange -= StateHasChanged;
+    }
 }

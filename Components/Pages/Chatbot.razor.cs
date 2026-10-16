@@ -18,6 +18,10 @@ namespace RathodWebScraping.Components.Pages
         [Inject] private VoiceSpeechService VoiceService { get; set; } = default!;
         [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
 
+        // FIXED: Added the missing cascading parameter property here
+        [CascadingParameter(Name = "IsDarkMode")]
+        public bool GlobalIsDarkMode { get; set; }
+
         protected List<ChatSession> sessions = new();
         protected List<DisplayMessage> displayMessages = new();
 
@@ -29,6 +33,7 @@ namespace RathodWebScraping.Components.Pages
         protected string? voiceErrorMessage = null;
         private string currentUserTrackingId = string.Empty;
         private readonly List<ChatMessage> chatHistory = new();
+
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
             if (firstRender)
@@ -36,6 +41,7 @@ namespace RathodWebScraping.Components.Pages
                 await InitializeUserSessionContext();
             }
         }
+
         private async Task InitializeUserSessionContext()
         {
             try
@@ -70,6 +76,7 @@ namespace RathodWebScraping.Components.Pages
                 StateHasChanged();
             }
         }
+
         protected async Task LoadSessionsFromDatabase()
         {
             if (string.IsNullOrEmpty(currentUserTrackingId)) return;
@@ -80,6 +87,7 @@ namespace RathodWebScraping.Components.Pages
                                 .OrderByDescending(s => s.CreatedAt)
                                 .ToListAsync();
         }
+
         protected async Task CreateNewSession()
         {
             if (string.IsNullOrEmpty(currentUserTrackingId)) return;
@@ -98,6 +106,7 @@ namespace RathodWebScraping.Components.Pages
             await LoadSessionsFromDatabase();
             await SwitchSession(newSession.Id);
         }
+
         protected async Task SwitchSession(int sessionId)
         {
             using var db = await DbFactory.CreateDbContextAsync();
@@ -130,6 +139,7 @@ namespace RathodWebScraping.Components.Pages
 
             StateHasChanged();
         }
+
         protected async Task SendMessage()
         {
             if (string.IsNullOrWhiteSpace(userInput) || isTyping || activeSession == null)
@@ -205,6 +215,7 @@ namespace RathodWebScraping.Components.Pages
                 StateHasChanged();
             }
         }
+
         protected async Task StartVoiceCapture()
         {
             voiceErrorMessage = null;
@@ -240,17 +251,20 @@ namespace RathodWebScraping.Components.Pages
                 }
             );
         }
+
         protected async Task StopVoiceCapture()
         {
             isListeningToVoice = false;
             await VoiceService.StopSpeechToTextAsync();
             StateHasChanged();
         }
+
         protected void ToggleMobileMenu()
         {
             isMobileSidebarOpen = !isMobileSidebarOpen;
             StateHasChanged();
         }
+
         protected void CloseMobileMenu()
         {
             if (isMobileSidebarOpen)
@@ -259,6 +273,7 @@ namespace RathodWebScraping.Components.Pages
                 StateHasChanged();
             }
         }
+
         protected async Task SelectSessionOnMobile(int sessionId)
         {
             isMobileSidebarOpen = false;
@@ -267,13 +282,11 @@ namespace RathodWebScraping.Components.Pages
         protected async Task DeleteSessionAsync(int sessionId)
         {
             if (string.IsNullOrEmpty(currentUserTrackingId)) return;
-
             using (var db = await DbFactory.CreateDbContextAsync())
             {
                 var targetSession = await db.Sessions
-                                            .Include(s => s.Messages)
-                                            .FirstOrDefaultAsync(s => s.Id == sessionId && s.UserId == currentUserTrackingId);
-
+                .Include(s => s.Messages)
+                .FirstOrDefaultAsync(s => s.Id == sessionId && s.UserId == currentUserTrackingId);
                 if (targetSession != null)
                 {
                     db.Messages.RemoveRange(targetSession.Messages);

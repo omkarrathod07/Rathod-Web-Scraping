@@ -1,0 +1,71 @@
+.hero-header-zone {
+    background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-sidebar) 100%);
+    border-color: var(--border-color) !important;
+}
+
+.border-brand {
+    border: 3px solid var(--chat-bubble-user) !important;
+    box-shadow: 0 0 15px rgba(255, 42, 75, 0.2);
+}
+
+.hero-logo {
+    width: 80px;
+    height: 80px;
+}
+
+.brand-watermark {
+    font-size: 5rem;
+    color: var(--text-muted);
+}
+
+.scoreboard-card {
+    background-color: var(--bg-card) !important;
+    border: 1px solid var(--border-color) !important;
+}
+.portal-card {
+    background-color: var(--bg-card) !important;
+    border: 1px solid var(--border-color) !important;
+}
+
+.transition-card {
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.25s ease;
+}
+
+    .transition-card:hover {
+        transform: translateY(-5px);
+        border-color: var(--chat-bubble-user) !important;
+    }
+
+.btn-primary,
+.btn-success {
+    background-color: var(--chat-bubble-user) !important;
+    border-color: var(--chat-bubble-user) !important;
+    color: #ffffff !important;
+    transition: background-color var(--transition-speed) ease, box-shadow var(--transition-speed) ease;
+}
+
+    .btn-primary:hover,
+    .btn-success:hover {
+        filter: brightness(1.15);
+        box-shadow: 0 0 14px var(--chat-bubble-user);
+    }
+
+@keyframes pulseSlow {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    50% {
+        transform: scale(1.03);
+        opacity: 0.95;
+    }
+}
+
+.animate-pulse-slow {
+    animation: pulseSlow 4s infinite ease-in-out;
+}
+
+.select-none {
+    user-select: none;
+}
